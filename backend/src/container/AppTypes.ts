@@ -5,4 +5,6 @@ export const AppTypes = {
     UserRepository: Symbol.for("UserRepository"),
     ConversationRepository: Symbol.for("ConversationRepository"),
     TokenService: Symbol.for("TokenService"),
+    ScraperService: Symbol.for("ScraperService"),
+    ConversationPipelineService: Symbol.for("ConversationPipelineService"),
 }
