@@ -1,11 +1,23 @@
-import { ApplyMiddleware, Body, Controller, HttpStatusCode, Post } from "@inversifyjs/http-core";
+import { ApplyMiddleware, Body, Controller, Cookies, HttpStatusCode, Post, Response } from "@inversifyjs/http-core";
 import { OasRequestBody, OasResponse, OasSummary, OasTag } from "@inversifyjs/http-open-api";
 import { ToSchemaFunction } from "@inversifyjs/http-open-api/v3Dot2";
 import { inject } from "inversify";
 import { AuthService } from "../../services/AuthService";
 import { ApiError } from "../../errors";
 import { ApiErrorHandler } from "../../middleware/ErrorHandler";
-import { AccessTokenResponse, AuthTokensResponse, RefreshRequest, SigninRequest, SignupRequest } from "./dto";
+import { SigninRequest, SignupRequest } from "./dto";
+
+const ACCESS_COOKIE_OPTIONS = {
+    httpOnly: true,
+    path: "/",
+    sameSite: "strict" as const,
+};
+
+const REFRESH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    path: "/auth/refresh",
+    sameSite: "strict" as const,
+};
 
 @ApplyMiddleware(ApiErrorHandler)
 @Controller("/auth")
@@ -20,17 +32,19 @@ export class AuthController {
         required: true,
         content: { "application/json": { schema: toSchema(SignupRequest) } },
     }))
-    @OasResponse(HttpStatusCode.CREATED, (toSchema: ToSchemaFunction) => ({
-        description: "User created",
-        content: { "application/json": { schema: toSchema(AuthTokensResponse) } },
+    @OasResponse(HttpStatusCode.CREATED, () => ({
+        description: "User created, tokens set in cookies",
     }))
     @OasResponse(HttpStatusCode.CONFLICT, (toSchema: ToSchemaFunction) => ({
         description: "Email already registered",
         content: { "application/json": { schema: toSchema(ApiError) } },
     }))
     @Post("signup")
-    public async signup(@Body() body: SignupRequest): Promise<object> {
-        return this.authService.signup(body.email, body.password, body.name);
+    public async signup(@Body() body: SignupRequest, @Response() reply: any): Promise<object> {
+        const tokens = await this.authService.signup(body.email, body.password, body.name);
+        reply.setCookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
+        reply.setCookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
+        return {};
     }
 
     @OasTag("Authentication")
@@ -39,35 +53,34 @@ export class AuthController {
         required: true,
         content: { "application/json": { schema: toSchema(SigninRequest) } },
     }))
-    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
-        description: "Authenticated",
-        content: { "application/json": { schema: toSchema(AuthTokensResponse) } },
+    @OasResponse(HttpStatusCode.OK, () => ({
+        description: "Authenticated, tokens set in cookies",
     }))
     @OasResponse(HttpStatusCode.UNAUTHORIZED, (toSchema: ToSchemaFunction) => ({
         description: "Invalid credentials",
         content: { "application/json": { schema: toSchema(ApiError) } },
     }))
     @Post("signin")
-    public async signin(@Body() body: SigninRequest): Promise<object> {
-        return this.authService.signin(body.email, body.password);
+    public async signin(@Body() body: SigninRequest, @Response() reply: any): Promise<object> {
+        const tokens = await this.authService.signin(body.email, body.password);
+        reply.setCookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
+        reply.setCookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
+        return {};
     }
 
     @OasTag("Authentication")
-    @OasSummary("Refresh access token")
-    @OasRequestBody((toSchema: ToSchemaFunction) => ({
-        required: true,
-        content: { "application/json": { schema: toSchema(RefreshRequest) } },
-    }))
-    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
-        description: "New access token",
-        content: { "application/json": { schema: toSchema(AccessTokenResponse) } },
+    @OasSummary("Refresh access token using refresh token cookie")
+    @OasResponse(HttpStatusCode.OK, () => ({
+        description: "Access token refreshed and set in cookie",
     }))
     @OasResponse(HttpStatusCode.UNAUTHORIZED, (toSchema: ToSchemaFunction) => ({
         description: "Invalid or expired refresh token",
         content: { "application/json": { schema: toSchema(ApiError) } },
     }))
     @Post("refresh")
-    public async refresh(@Body() body: RefreshRequest): Promise<object> {
-        return this.authService.refresh(body.refreshToken);
+    public refresh(@Cookies("refreshToken") refreshToken: string, @Response() reply: any): object {
+        const { accessToken } = this.authService.refresh(refreshToken);
+        reply.setCookie("accessToken", accessToken, ACCESS_COOKIE_OPTIONS);
+        return {};
     }
 }

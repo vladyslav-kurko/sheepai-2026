@@ -10,11 +10,13 @@ import { AnthropicChatService } from "../services/Anthropic/AnthropicChatService
 import { AuthService } from "../services/AuthService";
 import { TokenService } from "../services/TokenService";
 import { ApiErrorHandler } from "../middleware/ErrorHandler";
-import { AuthMiddleware } from "../middleware/AuthMiddleware";
+import { AuthMiddleware, OptionalAuthMiddleware } from "../middleware/AuthMiddleware";
 import { MongoDBClient } from "../repository/client";
 import { UserRepository } from "../repository/UserRepository";
 import { ConversationController } from "../controllers/Conversation/ConversationController";
 import { ConversationRepository } from "../repository/ConversationRepository";
+import { ScraperService } from "../services/ScraperService";
+import { ConversationPipelineService } from "../services/ConversationPipelineService";
 
 const container: Container = new Container();
 
@@ -30,14 +32,18 @@ container.bind<ChatController>(ChatController).toSelf().inSingletonScope();
 container.bind<AuthController>(AuthController).toSelf().inSingletonScope();
 container.bind<ConversationController>(ConversationController).toSelf().inSingletonScope();
 
-container.bind<AnthropicChatService>(AnthropicChatService).toSelf();
+container.bind<AnthropicChatService>(AnthropicChatService).toSelf().inSingletonScope();
+container.bind<ScraperService>(AppTypes.ScraperService).to(ScraperService).inSingletonScope();
+container.bind<ConversationPipelineService>(AppTypes.ConversationPipelineService).to(ConversationPipelineService).inSingletonScope();
 container.bind<ApiErrorHandler>(ApiErrorHandler).toSelf();
 container.bind<AuthMiddleware>(AuthMiddleware).toSelf();
+container.bind<OptionalAuthMiddleware>(OptionalAuthMiddleware).toSelf();
 
 container.bind<ConversationRepository>(AppTypes.ConversationRepository).to(ConversationRepository).inSingletonScope();
 
 const adapter: InversifyFastifyHttpAdapter = new InversifyFastifyHttpAdapter(
   container,
+  { useCookies: true },
 );
 
 export { container, adapter };
