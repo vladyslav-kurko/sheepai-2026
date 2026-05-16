@@ -1,59 +1,18 @@
 import { ApplyMiddleware, Body, Controller, HttpStatusCode, Post } from "@inversifyjs/http-core";
-import { OasRequestBody, OasResponse, OasSchema, OasSchemaProperty, OasSummary } from "@inversifyjs/http-open-api";
+import { OasRequestBody, OasResponse, OasSummary } from "@inversifyjs/http-open-api";
 import { ToSchemaFunction } from "@inversifyjs/http-open-api/v3Dot2";
 import { inject } from "inversify";
-import { AuthService } from "../services/AuthService";
-import { ApiError } from "../errors";
-import { ApiErrorHandler } from "../middleware/ErrorHandler";
-
-@OasSchema()
-class SignupRequest {
-    @OasSchemaProperty({ type: "string", format: "email" })
-    email!: string;
-
-    @OasSchemaProperty({ type: "string" })
-    password!: string;
-
-    @OasSchemaProperty({ type: "string" })
-    name!: string;
-}
-
-@OasSchema()
-class SigninRequest {
-    @OasSchemaProperty({ type: "string", format: "email" })
-    email!: string;
-
-    @OasSchemaProperty({ type: "string" })
-    password!: string;
-}
-
-@OasSchema()
-class RefreshRequest {
-    @OasSchemaProperty({ type: "string" })
-    refreshToken!: string;
-}
-
-@OasSchema()
-class AuthTokensResponse {
-    @OasSchemaProperty({ type: "string" })
-    accessToken!: string;
-
-    @OasSchemaProperty({ type: "string" })
-    refreshToken!: string;
-}
-
-@OasSchema()
-class AccessTokenResponse {
-    @OasSchemaProperty({ type: "string" })
-    accessToken!: string;
-}
+import { AuthService } from "../../services/AuthService";
+import { ApiError } from "../../errors";
+import { ApiErrorHandler } from "../../middleware/ErrorHandler";
+import { AccessTokenResponse, AuthTokensResponse, RefreshRequest, SigninRequest, SignupRequest } from "./dto";
 
 @ApplyMiddleware(ApiErrorHandler)
 @Controller("/auth")
 export class AuthController {
     constructor(
         @inject(AuthService) private readonly authService: AuthService
-    ) {}
+    ) { }
 
     @OasSummary("Register a new user")
     @OasRequestBody((toSchema: ToSchemaFunction) => ({

@@ -5,7 +5,7 @@ import { AppTypes } from "./AppTypes";
 import { Config } from "../config";
 import { Logger } from "../utils";
 import { ChatController } from "../controllers";
-import { AuthController } from "../controllers/AuthController";
+import { AuthController } from "../controllers/Auth/AuthController";
 import { AnthropicChatService } from "../services/Anthropic/AnthropicChatService/AnthropicChatService";
 import { AuthService } from "../services/AuthService";
 import { TokenService } from "../services/TokenService";
