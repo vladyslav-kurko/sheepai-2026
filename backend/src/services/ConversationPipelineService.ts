@@ -1,35 +1,54 @@
 import { inject, injectable } from "inversify";
 import { AnthropicChatService } from "./Anthropic/AnthropicChatService/AnthropicChatService";
-import { ScraperService } from "./ScraperService";
-import { AppTypes } from "../container/AppTypes";
 import { ModulesPayload } from "../controllers/Conversation/MessageModule.interface";
-import { Logger } from "../utils";
+import { AppTypes } from "../container/AppTypes";
+import { ConversationRepository } from "../repository/ConversationRepository";
+import {
+    buildContextNote,
+    ChipAnswer,
+    createCivicState,
+    mergeChipAnswer,
+    recordClarification,
+} from "./CivicStateService";
+
+const MAX_CLARIFICATIONS = 2;
 
 @injectable()
 export class ConversationPipelineService {
     constructor(
         @inject(AnthropicChatService) private readonly anthropic: AnthropicChatService,
-        @inject(AppTypes.ScraperService) private readonly scraper: ScraperService,
-        @inject(AppTypes.Logger) private readonly logger: Logger,
+        @inject(AppTypes.ConversationRepository) private readonly conversationRepository: ConversationRepository,
     ) {}
 
-    public async process(userMessage: string): Promise<ModulesPayload> {
-        // 1. Ask Claude which Croatian gov sites are relevant
-        const sites = await this.anthropic.selectRelevantSites(userMessage);
-        this.logger.info(`[ Pipeline ] Selected sites: ${sites.map((s) => s.url).join(", ")}`);
+    public async process(
+        userMessage: string,
+        conversationId: string,
+        chipAnswer?: ChipAnswer,
+    ): Promise<ModulesPayload> {
+        let state = await this.conversationRepository.getCivicState(conversationId)
+            ?? createCivicState();
 
-        // 2. Scrape all selected sites in parallel
-        const scrapedChunks = await Promise.all(
-            sites.map(async (site) => {
-                const content = await this.scraper.scrapeUrl(site.url);
-                if (!content) return "";
-                return `[${site.name} — ${site.url}]\n${content}`;
-            })
-        );
-        const combinedContent = scrapedChunks.filter(Boolean).join("\n\n---\n\n");
-        this.logger.info(`[ Pipeline ] Scraped ${scrapedChunks.filter(Boolean).length}/${sites.length} sites`);
+        if (chipAnswer) {
+            state = mergeChipAnswer(state, chipAnswer);
+            // Chip taps always proceed to Claude — user has answered the clarification
+            const contextNote = buildContextNote(state, true);
+            const payload = await this.anthropic.processWithTools(
+                chipAnswer.label,
+                contextNote,
+            );
+            await this.conversationRepository.updateCivicState(conversationId, state);
+            return payload;
+        }
 
-        // 3. Ask Claude to structure the response as ModulesPayload
-        return this.anthropic.structureToModulesPayload(userMessage, combinedContent);
+        const forceAnswer = state.clarificationCount >= MAX_CLARIFICATIONS;
+        const contextNote = buildContextNote(state, forceAnswer);
+        const payload = await this.anthropic.processWithTools(userMessage, contextNote);
+
+        if (payload.modulesToRender.includes("clarification")) {
+            state = recordClarification(state);
+        }
+
+        await this.conversationRepository.updateCivicState(conversationId, state);
+        return payload;
     }
 }

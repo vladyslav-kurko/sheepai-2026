@@ -7,15 +7,17 @@ export enum ErrorCode {
     AssistantError = "ASSISTANT_ERROR",
     UnauthorizedError = "UNAUTHORIZED_ERROR",
     ConflictError = "CONFLICT_ERROR",
+    DatabaseError = "DATABASE_ERROR",
 }
 
-const ErrorCodeToStatusCodeMapping = {
+const ErrorCodeToStatusCodeMapping: Record<ErrorCode, number> = {
     [ErrorCode.ValidationError]: 400,
     [ErrorCode.NotFoundError]: 404,
     [ErrorCode.InternalServerError]: 500,
     [ErrorCode.AssistantError]: 500,
     [ErrorCode.UnauthorizedError]: 401,
     [ErrorCode.ConflictError]: 409,
+    [ErrorCode.DatabaseError]: 500,
 }
 
 @OasSchema()
@@ -38,7 +40,7 @@ export class ApiErrorBuilder extends ApiError {
     }
 
     public withDetails(_details: any): ApiErrorBuilder {
-        this.details = _details;
+        this.details = _details instanceof Error ? { message: _details.message, stack: _details.stack } : _details;
         return this;
     }
 

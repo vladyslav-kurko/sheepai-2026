@@ -5,14 +5,22 @@ import { Config } from "../../../config";
 import { Logger } from "../../../utils";
 import { AppTypes } from "../../../container/AppTypes";
 import { ApiErrorBuilder, ErrorCode } from "../../../errors";
-import { CROATIAN_GOV_SITES, CroatianGovSite } from "../../CroatianGovSites";
+import { CROATIAN_GOV_SITES } from "../../CroatianGovSites";
+import { ScraperService } from "../../ScraperService";
 import { ModulesPayload } from "../../../controllers/Conversation/MessageModule.interface";
 
-const MODULES_PAYLOAD_SCHEMA = `
+const SYSTEM_PROMPT = `You are a Croatian government services assistant. Your job is to help users navigate Croatian bureaucracy.
+
+When a user asks about a government service, use the search_gov_site tool to fetch relevant information from Croatian government websites, then return a structured JSON response.
+
+Available Croatian government sites:
+${CROATIAN_GOV_SITES.map((s) => `- ${s.url} (${s.name}): ${s.topics.join(", ")}`).join("\n")}
+
+After gathering information, return ONLY a valid JSON object matching this structure (no markdown, no explanation):
 {
-  modulesToRender: Array of zero or more of:
+  modulesToRender: Array of keys where you have data, chosen from:
     "text"|"alert"|"links"|"faq"|"download_list"|"quick_actions"|"status_tracker"|
-    "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill",
+    "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill"|"clarification",
   data: {
     text?: { markdown: string },
     alert?: { level:"info"|"warning"|"error"|"success", title:string, body?:string },
@@ -28,9 +36,36 @@ const MODULES_PAYLOAD_SCHEMA = `
     fee_calculator?: { items:[{id:string, type:"fixed"|"stepper"|"checkbox", label:string, unitPrice:number}], currency?:string },
     appointment_finder?: { date:string, slots:[{time:string, taken:boolean}], bookingUrl?:string },
     map?: { address:string, lat?:number, lng?:number, routes?:[{mode:"walk"|"transit"|"drive", duration:string}] },
-    form_prefill?: { fields:[{label:string, value?:string, prefilled:boolean}], formUrl?:string, formName?:string }
+    form_prefill?: { fields:[{label:string, value?:string, prefilled:boolean}], formUrl?:string, formName?:string },
+    clarification?: { question:string, chips:[{label:string, slotKey:string, slotValue:string}] }
   }
-}`;
+}
+
+Rules:
+- ALWAYS respond with ONLY the JSON object, never with prose or explanation
+- If the question is unclear or off-topic, still return JSON with a text module explaining in Croatian/English
+- modulesToRender must only list keys that have data entries
+- Use Croatian context (EUR, Croatian departments, Croatian addresses)
+- For process_timeline: actor "user" = user acts, "city" = government acts, "done" = completed
+- Use "clarification" ONLY when the query is genuinely too vague to act on (missing the single key piece of information)
+- A clarification response must have ONLY "clarification" in modulesToRender — no other modules alongside it
+- Chips slotKey must be "__intent__" for intent disambiguation, "city" for city, or the specific slot name
+- If conversation context is already provided at the top of the message, act on it — do not ask again`;
+
+const SEARCH_TOOL: Anthropic.Tool = {
+    name: "search_gov_site",
+    description: "Fetch and extract text content from a Croatian government website to find relevant information for the user's query.",
+    input_schema: {
+        type: "object",
+        properties: {
+            url: {
+                type: "string",
+                description: "The full URL of the Croatian government website to fetch (e.g. https://mup.gov.hr)",
+            },
+        },
+        required: ["url"],
+    },
+};
 
 @injectable()
 export class AnthropicChatService {
@@ -38,7 +73,8 @@ export class AnthropicChatService {
 
     constructor(
         @inject(AppTypes.Config) private readonly config: Config,
-        @inject(AppTypes.Logger) private readonly logger: Logger
+        @inject(AppTypes.Logger) private readonly logger: Logger,
+        @inject(AppTypes.ScraperService) private readonly scraper: ScraperService,
     ) {
         this.client = new Anthropic({ apiKey: this.config.anthropicApiKey });
     }
@@ -57,71 +93,62 @@ export class AnthropicChatService {
         }
     }
 
-    public async selectRelevantSites(query: string): Promise<CroatianGovSite[]> {
-        const siteList = CROATIAN_GOV_SITES
-            .map((s, i) => `${i}. ${s.url} — ${s.name}: ${s.topics.join(", ")}`)
-            .join("\n");
-
-        const prompt = `You are helping a Croatian government services assistant select relevant data sources.
-
-User query: "${query}"
-
-Available Croatian government sites:
-${siteList}
-
-Return a JSON array of indices (numbers) for the most relevant sites (max 3). Example: [0, 2]
-Return ONLY the JSON array, nothing else.`;
+    public async processWithTools(userMessage: string, contextNote: string = ""): Promise<ModulesPayload> {
+        const fullMessage = contextNote ? `${contextNote}\n${userMessage}` : userMessage;
+        const messages: Anthropic.MessageParam[] = [
+            { role: "user", content: fullMessage },
+        ];
 
         try {
-            const msg = await this.client.messages.create({
-                model: "claude-haiku-4-5-20251001",
-                max_tokens: 64,
-                messages: [{ role: "user", content: prompt }],
-            });
-            // @ts-ignore
-            const text: string = msg.content[0].text.trim();
-            const indices: number[] = JSON.parse(text);
-            return indices
-                .filter((i) => i >= 0 && i < CROATIAN_GOV_SITES.length)
-                .map((i) => CROATIAN_GOV_SITES[i]);
-        } catch {
-            this.logger.error("[ AnthropicChatService ] Failed to select sites, falling back to gov.hr");
-            return [CROATIAN_GOV_SITES.find((s) => s.url === "https://www.gov.hr")!];
-        }
-    }
+            while (true) {
+                const response = await this.client.messages.create({
+                    model: "claude-opus-4-7",
+                    max_tokens: 4096,
+                    system: SYSTEM_PROMPT,
+                    tools: [SEARCH_TOOL],
+                    messages,
+                });
 
-    public async structureToModulesPayload(query: string, scrapedContent: string): Promise<ModulesPayload> {
-        const content = scrapedContent.trim() || "No scraped content available. Use your general knowledge of Croatian government services.";
+                if (response.stop_reason === "end_turn") {
+                    const textBlock = response.content.find((b) => b.type === "text");
+                    if (!textBlock || textBlock.type !== "text") {
+                        throw new Error("No text in final response");
+                    }
+                    const raw = textBlock.text.trim()
+                        .replace(/^```(?:json)?\n?/, "")
+                        .replace(/\n?```$/, "");
+                    try {
+                        return JSON.parse(raw) as ModulesPayload;
+                    } catch {
+                        return {
+                            modulesToRender: ["text"],
+                            data: { text: { markdown: textBlock.text.trim() } },
+                        };
+                    }
+                }
 
-        const prompt = `You are a Croatian government services assistant. Structure a helpful response for this user query.
+                if (response.stop_reason === "tool_use") {
+                    messages.push({ role: "assistant", content: response.content });
 
-User query: "${query}"
+                    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+                    for (const block of response.content) {
+                        if (block.type !== "tool_use") continue;
+                        const { url } = block.input as { url: string };
+                        this.logger.info(`[ AnthropicChatService ] Tool call: search_gov_site(${url})`);
+                        const content = await this.scraper.scrapeUrl(url);
+                        toolResults.push({
+                            type: "tool_result",
+                            tool_use_id: block.id,
+                            content: content || "No content found at this URL.",
+                        });
+                    }
 
-Scraped content from Croatian government websites:
-${content}
-
-Return a JSON object matching this exact structure (include only modules where you have real data):
-${MODULES_PAYLOAD_SCHEMA}
-
-Rules:
-- modulesToRender must only list keys that have corresponding data entries
-- Use Croatian context (EUR currency, Croatian departments, Croatian addresses)
-- For process_timeline, actor "user" = user must act, "city" = government acts, "done" = completed
-- Return ONLY valid JSON, no markdown, no explanation`;
-
-        try {
-            const msg = await this.client.messages.create({
-                model: "claude-opus-4-7",
-                max_tokens: 2048,
-                messages: [{ role: "user", content: prompt }],
-            });
-            // @ts-ignore
-            const text: string = msg.content[0].text.trim();
-            const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-            return JSON.parse(json) as ModulesPayload;
+                    messages.push({ role: "user", content: toolResults });
+                }
+            }
         } catch (error) {
             throw new ApiErrorBuilder()
-                .error(ErrorCode.AssistantError, "Failed to structure response from Anthropic")
+                .error(ErrorCode.AssistantError, "Failed to process conversation with tools")
                 .withDetails(error);
         }
     }

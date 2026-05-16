@@ -1,5 +1,6 @@
 import { BSON, UUID, WithId } from "mongodb";
 import { ConversationEntity, MessageEntity } from "../../domain";
+import { CivicState } from "../../services/CivicStateService";
 
 export interface IConversation {
     id: UUID;
@@ -7,6 +8,7 @@ export interface IConversation {
     title: string;
     createdAt: Date;
     updatedAt: Date;
+    civicState?: CivicState;
 }
 
 export class IConversationMapper {

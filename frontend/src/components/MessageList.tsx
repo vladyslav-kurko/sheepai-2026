@@ -1,9 +1,12 @@
 import type { RefObject } from 'react';
 import type { Message } from '../types';
+import type { ChatLanguage } from '../prompt-engineering';
 
-function ThinkingDots() {
+function ThinkingDots({ language }: { language: ChatLanguage | null }) {
+  const label = language === 'en' ? 'Assistant is thinking' : 'Asistent razmislja';
+
   return (
-    <div className="bubble bubble--assistant" aria-label="Assistant is thinking">
+    <div className="bubble bubble--assistant" aria-label={label}>
       <div className="thinking-dots">
         <span /><span /><span />
       </div>
@@ -15,11 +18,14 @@ interface Props {
   messages: Message[];
   loading: boolean;
   bottomRef: RefObject<HTMLDivElement | null>;
+  language: ChatLanguage | null;
 }
 
-export default function MessageList({ messages, loading, bottomRef }: Props) {
+export default function MessageList({ messages, loading, bottomRef, language }: Props) {
+  const ariaLabel = language === 'en' ? 'Chat messages' : 'Poruke razgovora';
+
   return (
-    <main className="card__messages" aria-live="polite" aria-label="Chat messages">
+    <main className="card__messages" aria-live="polite" aria-label={ariaLabel}>
       <div className="card__messages-spacer" />
       {messages.map((msg) => (
         <div key={msg.id} className={`msg-row msg-row--${msg.role}`}>
@@ -32,7 +38,7 @@ export default function MessageList({ messages, loading, bottomRef }: Props) {
       ))}
       {loading && (
         <div className="msg-row msg-row--assistant">
-          <ThinkingDots />
+          <ThinkingDots language={language} />
         </div>
       )}
       <div ref={bottomRef} />
