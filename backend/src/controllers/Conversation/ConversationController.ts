@@ -5,8 +5,8 @@ import { OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversif
 import { ConversationEntityBuilder, MessageEntityBuilder } from "../../domain";
 import { AppTypes } from "../../container/AppTypes";
 import { ApiErrorHandler } from "../../middleware/ErrorHandler";
-import { ApiErrorBuilder, ErrorCode } from "../../errors";
-import { CreateConversationRequestDTO, CreatedConversationDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
+import { ApiError, ApiErrorBuilder, ErrorCode } from "../../errors";
+import { ConversationWithMessagesDTO, CreateConversationRequestDTO, CreatedConversationDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
 import { ConversationRepository } from "../../repository/ConversationRepository";
 import { ConversationPipelineService } from "../../services/ConversationPipelineService";
 import { OptionalAuthMiddleware } from "../../middleware/AuthMiddleware";
@@ -23,6 +23,14 @@ export class ConversationController {
     ) {}
 
     @OasTag("Conversations")
+    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
+        description: "Conversation with message history",
+        content: { "application/json": { schema: toSchema(ConversationWithMessagesDTO) } },
+    }))
+    @OasResponse(HttpStatusCode.NOT_FOUND, (toSchema: ToSchemaFunction) => ({
+        description: "Conversation not found",
+        content: { "application/json": { schema: toSchema(ApiError) } },
+    }))
     @Get("/:id")
     public async getConversationById(
         @Params({ name: "id" }) id: string
