@@ -1,5 +1,6 @@
 import "reflect-metadata";
 
+import cors from "@fastify/cors";
 import { Config } from "./config";
 import { adapter, container } from "./container";
 
@@ -14,11 +15,19 @@ swaggerConfig.provide(container);
 adapter.build().then(async (application) => {
     const config = container.get<Config>(AppTypes.Config);
     const database = container.get<MongoDBClient>(AppTypes.MongoDBClient);
-    
+
     await database.init();
 
     const userRepository = container.get<UserRepository>(AppTypes.UserRepository);
     await userRepository.init();
+
+    await application.register(cors, {
+        origin: [
+            config.corsOrigin,
+            "http://localhost:3000"
+        ],
+        credentials: true,
+    });
 
     application.listen({
         port: config.port,

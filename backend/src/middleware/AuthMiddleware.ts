@@ -26,3 +26,25 @@ export class AuthMiddleware {
         }
     }
 }
+
+@injectable()
+export class OptionalAuthMiddleware {
+    constructor(
+        @inject(AppTypes.TokenService) private readonly tokenService: TokenService
+    ) {}
+
+    public async execute(request: any, response: any, next: any): Promise<void> {
+        const token: string | undefined = request.cookies?.accessToken;
+        if (!token) {
+            await next();
+            return;
+        }
+        try {
+            const payload = this.tokenService.verifyAccessToken(token);
+            request.userId = payload.userId;
+            await next();
+        } catch {
+            await next();
+        }
+    }
+}

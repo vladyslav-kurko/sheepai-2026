@@ -1,16 +1,17 @@
 import { inject } from "inversify";
-import { ApplyMiddleware, Body, Controller, Get, HttpStatusCode, Params, Post } from "@inversifyjs/http-core";
+import { ApplyMiddleware, Body, Controller, Get, HttpStatusCode, Params, Post, Request } from "@inversifyjs/http-core";
 import { OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversifyjs/http-open-api";
 
 import { ConversationEntityBuilder, MessageEntityBuilder } from "../../domain";
 import { AppTypes } from "../../container/AppTypes";
 import { ApiErrorHandler } from "../../middleware/ErrorHandler";
-import { ApiErrorBuilder, ErrorCode } from "../../errors";
-import { CreateConversationRequestDTO, CreatedConversationDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
+import { ApiError, ApiErrorBuilder, ErrorCode } from "../../errors";
+import { ConversationWithMessagesDTO, CreateConversationRequestDTO, CreatedConversationDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
 import { ConversationRepository } from "../../repository/ConversationRepository";
 import { ConversationPipelineService } from "../../services/ConversationPipelineService";
+import { OptionalAuthMiddleware } from "../../middleware/AuthMiddleware";
 
-@ApplyMiddleware(ApiErrorHandler)
+@ApplyMiddleware(ApiErrorHandler, OptionalAuthMiddleware)
 @Controller("/conversations")
 export class ConversationController {
 
@@ -22,6 +23,14 @@ export class ConversationController {
     ) {}
 
     @OasTag("Conversations")
+    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
+        description: "Conversation with message history",
+        content: { "application/json": { schema: toSchema(ConversationWithMessagesDTO) } },
+    }))
+    @OasResponse(HttpStatusCode.NOT_FOUND, (toSchema: ToSchemaFunction) => ({
+        description: "Conversation not found",
+        content: { "application/json": { schema: toSchema(ApiError) } },
+    }))
     @Get("/:id")
     public async getConversationById(
         @Params({ name: "id" }) id: string
@@ -45,6 +54,7 @@ export class ConversationController {
         content: { "application/json": { schema: toSchema(CreateConversationRequestDTO) } },
     }))
     public async createConversation(
+        @Request() req: any,
         @Body() body: CreateConversationRequestDTO
     ): Promise<CreatedConversationDTO> {
         const modulesPayload = await this.pipelineService.process(body.message);
@@ -52,6 +62,7 @@ export class ConversationController {
         const title = body.message.length > 20 ? body.message.substring(0, 20) + "..." : body.message;
         const conversation = new ConversationEntityBuilder()
             .setTitle(title)
+            .setUserId(req.userId)
             .setCreatedAt(new Date())
             .setUpdatedAt(new Date())
             .build();
@@ -89,6 +100,7 @@ export class ConversationController {
         content: { "application/json": { schema: toSchema(SendMessageRequestDTO) } },
     }))
     public async sendMessage(
+        @Request() req: any,
         @Params({ name: "id" }) conversationId: string,
         @Body() body: SendMessageRequestDTO
     ): Promise<MessageResponseDTO> {
