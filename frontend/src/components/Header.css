@@ -1,0 +1,117 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  z-index: 100;
+}
+
+.header__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #0F172A;
+}
+
+.header__logo-text {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #0F172A;
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__signin {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.header__signin:hover {
+  color: #0F172A;
+  background: #F1F5F9;
+}
+
+.header__signup {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: #0369A1;
+  transition: background 150ms ease;
+}
+
+.header__signup:hover {
+  background: #0284C7;
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0369A1;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.header__username {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.header__logout {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748B;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 150ms ease, background 150ms ease;
+  font-family: 'Lato', system-ui, sans-serif;
+}
+
+.header__logout:hover {
+  color: #0F172A;
+  background: #F1F5F9;
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0 16px; }
+  .header__logo-text { font-size: 19px; }
+  .header__signup { padding: 6px 10px; }
+  .header__username { display: none; }
+}
