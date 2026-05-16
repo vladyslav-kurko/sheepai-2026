@@ -5,7 +5,6 @@ import MessageList from '../components/MessageList';
 import ChatInput from '../components/ChatInput';
 import './HomePage.css';
 
-// Replace with real API call when the backend is ready
 async function sendToBackend(_message: string): Promise<string> {
   await new Promise((r) => setTimeout(r, 1500));
   return 'Backend nije još spojen.\nBackend not connected yet.';
@@ -13,6 +12,7 @@ async function sendToBackend(_message: string): Promise<string> {
 
 export default function HomePage() {
   const [chatStarted, setChatStarted] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,19 +23,23 @@ export default function HomePage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function submitMessage() {
-    const text = input.trim();
-    if (!text || loading) return;
+  async function submitText(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
 
-    if (!chatStarted) setChatStarted(true);
+    if (!chatStarted) {
+      setHeroVisible(false);
+      await new Promise((r) => setTimeout(r, 200));
+      setChatStarted(true);
+    }
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text };
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: trimmed };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-      const reply = await sendToBackend(text);
+      const reply = await sendToBackend(trimmed);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'assistant', content: reply },
@@ -46,10 +50,14 @@ export default function HomePage() {
     }
   }
 
+  function submitMessage() {
+    submitText(input);
+  }
+
   return (
     <div className="page">
-<div className={`card${chatStarted ? ' card--chat' : ''}`}>
-        {!chatStarted && <HeroSection />}
+      <div className={`card${chatStarted ? ' card--chat' : ''}`}>
+        {!chatStarted && <HeroSection visible={heroVisible} />}
         {chatStarted && (
           <MessageList messages={messages} loading={loading} bottomRef={bottomRef} />
         )}
@@ -57,6 +65,7 @@ export default function HomePage() {
           value={input}
           onChange={setInput}
           onSubmit={submitMessage}
+          onChipClick={submitText}
           loading={loading}
           showHint={!chatStarted}
           inputRef={inputRef}

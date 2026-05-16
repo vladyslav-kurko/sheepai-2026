@@ -4,17 +4,24 @@ import { SendIcon } from './icons';
 
 const MAX_HEIGHT = 160;
 
+const CHIPS = [
+  'Kako dobiti osobnu iskaznicu?',
+  'Što je OIB i kako ga dobiti?',
+  'Registracija obrta — koraci',
+  'Nova putovnica — dokumenti',
+];
+
 interface Props {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onChipClick?: (text: string) => void;
   loading: boolean;
   showHint: boolean;
   inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
-export default function ChatInput({ value, onChange, onSubmit, loading, showHint, inputRef }: Props) {
-  // Auto-resize: shrink to 'auto' first so scrollHeight recalculates correctly
+export default function ChatInput({ value, onChange, onSubmit, onChipClick, loading, showHint, inputRef }: Props) {
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -44,7 +51,7 @@ export default function ChatInput({ value, onChange, onSubmit, loading, showHint
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Kako dobiti osobnu iskaznicu? / How to get an ID card?"
+          placeholder="Pitajte bilo što o dokumentima…"
           rows={1}
           aria-label="Your question"
           disabled={loading}
@@ -58,7 +65,22 @@ export default function ChatInput({ value, onChange, onSubmit, loading, showHint
           <SendIcon />
         </button>
       </form>
-      {showHint && <p className="card__hint">Enter to send · Shift+Enter for new line</p>}
+      {/* {showHint && <p className="card__hint">Enter za slanje · Shift+Enter novi red</p>} */}
+      {showHint && onChipClick && (
+        <div className="card__chips">
+          {CHIPS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              className="card__chip"
+              onClick={() => onChipClick(chip)}
+              disabled={loading}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

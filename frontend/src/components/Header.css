@@ -8,8 +8,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
+  background: rgba(238, 244, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
   z-index: 100;
 }
 
