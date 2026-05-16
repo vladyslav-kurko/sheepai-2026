@@ -1,4 +1,5 @@
-import type { RefObject } from 'react';
+import { useEffect, type RefObject } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { Message } from '../types';
 import type { ChatLanguage } from '../prompt-engineering';
 
@@ -23,16 +24,22 @@ interface Props {
 
 export default function MessageList({ messages, loading, bottomRef, language }: Props) {
   const ariaLabel = language === 'en' ? 'Chat messages' : 'Poruke razgovora';
-
+  useEffect(() => {
+    console.log('MessageList rendered with messages:', messages);
+  }, [messages]);
   return (
     <main className="card__messages" aria-live="polite" aria-label={ariaLabel}>
       <div className="card__messages-spacer" />
       {messages.map((msg) => (
         <div key={msg.id} className={`msg-row msg-row--${msg.role}`}>
           <div className={`bubble bubble--${msg.role}`}>
-            {msg.content.split('\n').map((line, i, arr) => (
-              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
-            ))}
+            {msg.role === 'assistant' ? (
+              <ReactMarkdown>{msg.content}</ReactMarkdown>
+            ) : (
+              msg.content.split('\n').map((line, i, arr) => (
+                <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+              ))
+            )}
           </div>
         </div>
       ))}
