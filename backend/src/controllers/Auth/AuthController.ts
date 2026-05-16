@@ -1,5 +1,5 @@
 import { ApplyMiddleware, Body, Controller, HttpStatusCode, Post } from "@inversifyjs/http-core";
-import { OasRequestBody, OasResponse, OasSummary } from "@inversifyjs/http-open-api";
+import { OasRequestBody, OasResponse, OasSummary, OasTag } from "@inversifyjs/http-open-api";
 import { ToSchemaFunction } from "@inversifyjs/http-open-api/v3Dot2";
 import { inject } from "inversify";
 import { AuthService } from "../../services/AuthService";
@@ -14,6 +14,7 @@ export class AuthController {
         @inject(AuthService) private readonly authService: AuthService
     ) { }
 
+    @OasTag("Authentication")
     @OasSummary("Register a new user")
     @OasRequestBody((toSchema: ToSchemaFunction) => ({
         required: true,
@@ -32,6 +33,7 @@ export class AuthController {
         return this.authService.signup(body.email, body.password, body.name);
     }
 
+    @OasTag("Authentication")
     @OasSummary("Sign in with email and password")
     @OasRequestBody((toSchema: ToSchemaFunction) => ({
         required: true,
@@ -50,6 +52,7 @@ export class AuthController {
         return this.authService.signin(body.email, body.password);
     }
 
+    @OasTag("Authentication")
     @OasSummary("Refresh access token")
     @OasRequestBody((toSchema: ToSchemaFunction) => ({
         required: true,

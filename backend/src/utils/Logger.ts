@@ -6,7 +6,7 @@ export class Logger {
         console.log(`[${new Date().toISOString()}] ${message}`);
     }
 
-    error(message: string, error?: Error): void {
+    error(message: string, error?: Error | unknown): void {
         console.error(`[${new Date().toISOString()}] ERROR: ${message}`);
         if (error) {
             console.error(error);
