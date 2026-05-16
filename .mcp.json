@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "magic": {
+      "command": "npx",
+      "args": ["-y", "@21st-dev/magic@latest"]
+    }
+  }
+}

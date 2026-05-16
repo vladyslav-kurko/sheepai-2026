@@ -1,0 +1,322 @@
+{
+  "info": {
+    "title": "The GoOver API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.1",
+  "paths": {
+    "/chat/test": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "responses": {
+          "201": {
+            "description": "User created, tokens set in cookies"
+          },
+          "409": {
+            "description": "Email already registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/signin": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Authenticated, tokens set in cookies"
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SigninRequest"
+              }
+            }
+          }
+        },
+        "summary": "Sign in with email and password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Access token refreshed and set in cookie"
+          },
+          "401": {
+            "description": "Invalid or expired refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Refresh access token using refresh token cookie",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/conversations/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation created with initial assistant response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedConversationDTO"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations/{id}/messages": {
+      "post": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assistant response to the new message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Conversations"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "statusCode",
+          "message",
+          "details"
+        ]
+      },
+      "SignupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "name"
+        ]
+      },
+      "SigninRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "CreateConversationRequestDTO": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ]
+      },
+      "CreatedConversationDTO": {
+        "properties": {
+          "conversation": {
+            "type": "object",
+            "ref": "Conversation"
+          },
+          "initialAnswer": {
+            "type": "object",
+            "ref": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation",
+          "initialAnswer"
+        ]
+      },
+      "SendMessageRequestDTO": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ]
+      },
+      "MessageResponseDTO": {
+        "properties": {
+          "message": {
+            "type": "object",
+            "ref": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ]
+      }
+    }
+  }
+}
