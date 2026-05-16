@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { postAuthSignup } from '../api/generated/authentication/authentication';
 import { ApiError } from '../api/mutator';
 import { useAuth } from '../context/AuthContext';
-import { SheepLogo } from '../components/icons';
+// import { SheepLogo } from '../components/icons';
 import './auth.css';
 
 export default function SignUpPage() {
@@ -36,7 +36,7 @@ export default function SignUpPage() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-card__logo">
-          <SheepLogo size={44} />
+          {/* <SheepLogo size={44} /> */}
           <h1 className="auth-card__title">Create account</h1>
           <p className="auth-card__subtitle">Join GoOver — it's free</p>
         </div>

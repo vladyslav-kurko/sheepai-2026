@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { SheepLogo } from './icons';
+
+interface Props {
+  visible?: boolean;
+}
 
 const PHRASES = [
   'osobnu iskaznicu?',
@@ -13,7 +16,7 @@ const PHRASES = [
 
 const PREFIX = 'Trebate ';
 
-export default function HeroSection() {
+export default function HeroSection({ visible = true }: Props) {
   const [index, setIndex] = useState(0);
   const [displayed, setDisplayed] = useState('');
   const [phase, setPhase] = useState<'typing' | 'deleting'>('typing');
@@ -45,8 +48,7 @@ export default function HeroSection() {
   }, [displayed, phase, index]);
 
   return (
-    <section className="card__hero">
-      <SheepLogo size={52} />
+    <section className={`card__hero${visible ? '' : ' card__hero--out'}`}>
       <h1 className="card__title">Uredi svoje papire.</h1>
       <p className="card__typewriter">
         {PREFIX}
