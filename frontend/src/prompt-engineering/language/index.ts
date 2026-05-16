@@ -10,7 +10,9 @@ export interface LanguageDetection {
   source: 'franc' | 'heuristic' | 'claude-fallback';
 }
 
-export interface PreparedLanguageQuery extends LanguageDetection {
+export interface PreparedLanguageQuery extends Omit<LanguageDetection, 'language'> {
+  detectedLanguage: ChatLanguage;
+  language: ChatLanguage;
   originalText: string;
   normalizedText: string;
   changed: boolean;
@@ -231,6 +233,9 @@ export function normaliseMixedQuery(text: string, detectedLanguage: ChatLanguage
       (_match, verb: string) => `Kako ${verb}`,
     );
 
+    normalised = normalised.replace(/\bhow do I open\b/gi, 'Kako otvoriti');
+    normalised = normalised.replace(/\bin\s+([\p{L}-]+)/giu, (_match, location: string) => `u ${location}`);
+
     normalised = normalised.replace(/\bhow to get\b/gi, 'Kako dobiti');
 
     const replacements: Array<[RegExp, string]> = [
@@ -242,6 +247,7 @@ export function normaliseMixedQuery(text: string, detectedLanguage: ChatLanguage
       [/\bid card\b/gi, 'osobnu iskaznicu'],
       [/\bbirth certificate\b/gi, 'rodni list'],
       [/\bworking hours\b/gi, 'radno vrijeme'],
+      [/\bopen\b/gi, 'otvoriti'],
     ];
 
     for (const [pattern, replacement] of replacements) {
@@ -296,6 +302,7 @@ export async function prepareLanguageQuery(
 
   return {
     ...detection,
+    detectedLanguage: detection.language,
     language,
     originalText: text,
     normalizedText,

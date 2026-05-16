@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { SheepLogo } from './icons';
+// import { SheepLogo } from './icons';
 import './Header.css';
 
 export default function Header() {
@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="header">
       <Link to="/" className="header__logo">
-        <SheepLogo size={28} />
+        {/* <SheepLogo size={28} /> */}
         <span className="header__logo-text">GoOver</span>
       </Link>
       <nav className="header__nav">

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { postAuthSignin } from '../api/generated/authentication/authentication';
 import { ApiError } from '../api/mutator';
 import { useAuth } from '../context/AuthContext';
-import { SheepLogo } from '../components/icons';
+// import { SheepLogo } from '../components/icons';
 import './auth.css';
 
 export default function SignInPage() {
@@ -33,7 +33,7 @@ export default function SignInPage() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-card__logo">
-          <SheepLogo size={44} />
+          {/* <SheepLogo size={44} /> */}
           <h1 className="auth-card__title">Sign in</h1>
           <p className="auth-card__subtitle">Welcome back to GoOver</p>
         </div>

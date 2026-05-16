@@ -1,31 +1,94 @@
 /* ── Page shell — always centered ── */
 .page {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100dvh;
-  background: #F8FAFC;
-  padding: 80px 16px 24px; /* 56px header + 24px original */
+  background: #EEF4FF;
+  padding: 80px 16px 24px;
   box-sizing: border-box;
   overflow: hidden;
 }
 
+/* ── Ambient gradient blobs ── */
+.page::before,
+.page::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform;
+  animation: blob-drift 24s ease-in-out infinite;
+}
+
+.page::before {
+  width: min(560px, 60vw);
+  height: min(560px, 60vw);
+  background: rgba(147, 197, 253, 0.5);
+  top: -15%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.page::after {
+  width: min(480px, 50vw);
+  height: min(480px, 50vw);
+  background: rgba(196, 181, 253, 0.4);
+  bottom: -12%;
+  right: -8%;
+  animation-delay: -12s;
+}
+
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0px,   0px)  scale(1);    }
+  25%       { transform: translate(40px,  30px) scale(1.04); }
+  50%       { transform: translate(-25px, 45px) scale(0.97); }
+  75%       { transform: translate(45px, -30px) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page::before,
+  .page::after { animation: none; }
+}
+
 /* ── Card ── */
 .card {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   width: min(640px, 100%);
-  border: 1.5px solid transparent;
+  margin: auto;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
   border-radius: 20px;
-  transition: width 350ms ease, box-shadow 350ms ease, border-color 350ms ease;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: width 350ms ease, box-shadow 350ms ease, border-color 350ms ease,
+              background 350ms ease, backdrop-filter 350ms ease;
 }
 
 .card--chat {
-  width: min(700px, 100%);
-  height: calc(100dvh - 56px - 48px); /* viewport - header - top/bottom padding */
-  border-color: #E2E8F0;
-  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.07);
-  background: #FFFFFF;
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(700px, calc(100vw - 32px));
+  height: calc(100dvh - 104px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px rgba(99, 120, 180, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  animation: card-fadein 280ms ease both;
+}
+
+@keyframes card-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Hero ── */
@@ -36,6 +99,21 @@
   gap: 10px;
   text-align: center;
   padding: 0 8px 28px;
+  animation: hero-in 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card__hero--out {
+  animation: hero-out 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-out {
+  to { opacity: 0; transform: translateY(-10px); }
 }
 
 /* ── Top-right auth nav ── */
@@ -80,11 +158,15 @@
 .card__title {
   margin: 4px 0 0;
   font-family: 'EB Garamond', Georgia, serif;
-  font-size: 50px;
+  font-size: 66px;
   font-weight: 600;
-  color: #0F172A;
-  letter-spacing: -1.5px;
+  letter-spacing: -2px;
   line-height: 1;
+  background: linear-gradient(135deg, #0F172A 25%, #0369A1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #0F172A;
 }
 
 .card__tagline {
@@ -147,9 +229,15 @@
 
 .msg-row {
   display: flex;
+  animation: msg-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .msg-row--user      { justify-content: flex-end; }
 .msg-row--assistant { justify-content: flex-start; }
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ── Bubbles ── */
 .bubble {
@@ -168,7 +256,7 @@
 }
 
 .bubble--assistant {
-  background: #F1F5F9;
+  background: rgba(241, 245, 249, 0.85);
   color: #020617;
   border-bottom-left-radius: 4px;
 }
@@ -201,6 +289,45 @@
   .thinking-dots span { animation: none; opacity: 0.7; }
 }
 
+/* ── Suggestion chips ── */
+.card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 0 4px 14px;
+  animation: hero-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 80ms;
+}
+
+.card__chip {
+  font-family: 'Lato', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(203, 213, 225, 0.65);
+  border-radius: 20px;
+  padding: 7px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease,
+              transform 150ms ease;
+}
+
+.card__chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #0369A1;
+  color: #0369A1;
+  transform: translateY(-1px);
+}
+
+.card__chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ── Input area ── */
 .card__input-wrap {
   padding: 12px 16px 16px;
@@ -210,15 +337,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #FFFFFF;
-  border: 1.5px solid #CBD5E1;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(203, 213, 225, 0.6);
   border-radius: 14px;
   padding: 10px 10px 10px 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .card--chat .card__form {
-  background: #F8FAFC;
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .card__form:focus-within {
@@ -275,8 +404,17 @@
 }
 
 /* ── Responsive ── */
+@media (prefers-reduced-motion: reduce) {
+  .card__hero,
+  .card__hero--out,
+  .card__chips,
+  .msg-row { animation: none; }
+}
+
 @media (max-width: 480px) {
-  .card__title  { font-size: 38px; }
+  .card__title  { font-size: 44px; letter-spacing: -1.5px; }
+  .card__chips  { gap: 6px; }
+  .card__chip   { font-size: 12px; padding: 6px 11px; }
   .card__messages { padding: 16px 12px 6px; }
   .card__input-wrap { padding: 10px 10px 12px; }
   .bubble { max-width: 90%; }
