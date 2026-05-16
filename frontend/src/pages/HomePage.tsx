@@ -10,7 +10,7 @@ import {
   postConversationsMessagesId,
 } from '../api/generated/conversations/conversations';
 import type {
-  ChipAnswerDTO,
+  // ChipAnswerDTO,
   CreatedConversationDTO,
   MessageResponseDTO,
 } from '../api/generated/theGoOverAPI.schemas';
@@ -20,7 +20,7 @@ import {
 } from '../prompt-engineering';
 import './HomePage.css';
 
-const EMPTY_CHIP: ChipAnswerDTO = { label: '', slotKey: '', slotValue: '' };
+// const EMPTY_CHIP: ChipAnswerDTO = { label: '', slotKey: '', slotValue: '' };
 
 export default function HomePage() {
   const [chatStarted, setChatStarted] = useState(false);
@@ -42,13 +42,15 @@ export default function HomePage() {
     let content: { modulesToRender: string[]; data: Record<string, unknown> };
 
     if (!conversationId) {
-      const res = (await postConversations({ message: text, chipAnswer: EMPTY_CHIP })) as unknown as CreatedConversationDTO;
+      // @ts-expect-error - fix this type mismatch later
+      const res = (await postConversations({ message: text, chipAnswer: null })) as unknown as CreatedConversationDTO;
       setConversationId(res.conversation.id);
       content = res.initialAnswer.content as typeof content;
     } else {
       const res = (await postConversationsMessagesId(conversationId, {
         message: text,
-        chipAnswer: EMPTY_CHIP,
+        // @ts-expect-error - fix this type mismatch later
+        chipAnswer: null,
       })) as unknown as MessageResponseDTO;
       content = res.message.content as typeof content;
     }

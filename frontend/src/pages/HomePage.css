@@ -71,19 +71,13 @@
               background 350ms ease, backdrop-filter 350ms ease;
 }
 
-/* ── Chat layout wrapper (fixed, contains card + optional modules panel) ── */
+/* ── Chat layout wrapper ── */
 .chat-layout {
   position: fixed;
   top: 80px;
   left: 0;
   right: 0;
   bottom: 0;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  gap: 16px;
-  padding: 12px 16px 24px;
-  box-sizing: border-box;
   z-index: 1;
   animation: card-fadein 280ms ease both;
 }
@@ -93,9 +87,15 @@
   to   { opacity: 1; }
 }
 
+/* Card is always anchored to the horizontal center — never shifts */
 .card--chat {
-  flex: 0 1 660px;
-  height: 100%;
+  position: absolute;
+  top: 12px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  margin: 0; /* reset margin: auto from .card */
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -103,16 +103,24 @@
   box-shadow: 0 8px 32px rgba(99, 120, 180, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
-/* ── Modules panel ── */
+/* ── Modules panel — appears right next to the card, card never moves ── */
 .modules-panel {
-  flex: 0 1 380px;
-  min-width: 280px;
-  height: 100%;
+  position: absolute;
+  top: 12px;
+  bottom: 24px;
+  /* left edge = center + half card width + gap */
+  left: calc(50% + min(320px, (100vw - 32px) / 2) + 14px);
+  right: 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 4px 2px 4px 0;
+  padding: 0 2px 0 0;
+  animation: card-fadein 250ms ease both;
+}
+
+@media (max-width: 1199px) {
+  .modules-panel { display: none; }
 }
 
 /* ── Hero ── */
@@ -306,32 +314,35 @@
 
 .bubble--assistant li { margin-bottom: 2px; }
 
-/* ── Thinking dots ── */
-.thinking-dots {
+/* ── Thinking typewriter ── */
+.thinking-bubble {
+  min-width: 80px;
+  min-height: 1.4em;
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 4px;
+  gap: 0;
 }
 
-.thinking-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.thinking-bubble__text {
+  font-style: italic;
+  color: #64748B;
+  font-size: 14px;
+}
+
+.thinking-bubble__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 0.82em;
   background: #94A3B8;
-  animation: dot-pulse 1.2s ease-in-out infinite;
-}
-
-.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dot-pulse {
-  0%, 80%, 100% { transform: translateY(0);   opacity: 0.45; }
-  40%           { transform: translateY(-4px); opacity: 1; }
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: cursor-blink 0.9s step-end infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .thinking-dots span { animation: none; opacity: 0.7; }
+  .thinking-bubble__cursor { animation: none; }
+  .thinking-bubble__text::after { content: '…'; }
 }
 
 /* ── Suggestion chips ── */
