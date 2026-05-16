@@ -86,3 +86,33 @@ export class MessageResponseDTO {
     @OasSchemaProperty((toSchema: ToSchemaFunction) => toSchema(AssistantMessageEntity))
     message!: AssistantMessageEntity;
 }
+
+@OasSchema()
+export class ConversationListDTO {
+    @OasSchemaProperty((toSchema: ToSchemaFunction) => ({ type: "array", items: toSchema(ConversationEntity) }))
+    items!: ConversationEntity[];
+
+    @OasSchemaProperty({ type: "number" })
+    total!: number;
+
+    @OasSchemaProperty({ type: "number" })
+    page!: number;
+
+    @OasSchemaProperty({ type: "number" })
+    limit!: number;
+}
+
+@OasSchema()
+export class MessageListDTO {
+    @OasSchemaProperty((toSchema: ToSchemaFunction) => ({ type: "array", items: toSchema(AssistantMessageEntity) }))
+    items!: AssistantMessageEntity[];
+
+    @OasSchemaProperty({ type: "number" })
+    total!: number;
+
+    @OasSchemaProperty({ type: "number" })
+    page!: number;
+
+    @OasSchemaProperty({ type: "number" })
+    limit!: number;
+}

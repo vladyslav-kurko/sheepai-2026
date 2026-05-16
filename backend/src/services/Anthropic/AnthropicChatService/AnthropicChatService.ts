@@ -93,9 +93,14 @@ export class AnthropicChatService {
         }
     }
 
-    public async processWithTools(userMessage: string, contextNote: string = ""): Promise<ModulesPayload> {
+    public async processWithTools(
+        userMessage: string,
+        contextNote: string = "",
+        history: Anthropic.MessageParam[] = [],
+    ): Promise<ModulesPayload> {
         const fullMessage = contextNote ? `${contextNote}\n${userMessage}` : userMessage;
         const messages: Anthropic.MessageParam[] = [
+            ...history,
             { role: "user", content: fullMessage },
         ];
 

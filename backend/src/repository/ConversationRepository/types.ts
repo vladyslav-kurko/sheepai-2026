@@ -1,10 +1,10 @@
-import { BSON, UUID, WithId } from "mongodb";
+import { BSON, ObjectId, UUID, WithId } from "mongodb";
 import { ConversationEntity, MessageEntity } from "../../domain";
 import { CivicState } from "../../services/CivicStateService";
 
 export interface IConversation {
     id: UUID;
-    userId?: UUID;
+    userId?: ObjectId;
     title: string;
     createdAt: Date;
     updatedAt: Date;
@@ -15,7 +15,7 @@ export class IConversationMapper {
     public static toDTO(conversation: WithId<IConversation> | IConversation): ConversationEntity {
         return {
             id: conversation.id.toString(),
-            userId: conversation.userId ? conversation.userId.toString() : undefined,
+            userId: conversation.userId?.toString(),
             title: conversation.title,
             createdAt: conversation.createdAt,
             updatedAt: conversation.updatedAt
@@ -27,7 +27,7 @@ export class FromConversationEntityMapper {
     public static fromDTO(conversation: ConversationEntity): IConversation {
         return {
             id: new UUID(conversation.id),
-            userId: conversation.userId ? new UUID(conversation.userId) : undefined,
+            userId: conversation.userId ? new ObjectId(conversation.userId) : undefined,
             title: conversation.title,
             createdAt: conversation.createdAt,
             updatedAt: conversation.updatedAt

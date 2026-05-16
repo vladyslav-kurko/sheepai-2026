@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { inject, injectable } from "inversify";
 import { AnthropicChatService } from "./Anthropic/AnthropicChatService/AnthropicChatService";
 import { ModulesPayload } from "../controllers/Conversation/MessageModule.interface";
@@ -7,6 +8,7 @@ import {
     buildContextNote,
     ChipAnswer,
     createCivicState,
+    Language,
     mergeChipAnswer,
     recordClarification,
 } from "./CivicStateService";
@@ -20,35 +22,46 @@ export class ConversationPipelineService {
         @inject(AppTypes.ConversationRepository) private readonly conversationRepository: ConversationRepository,
     ) {}
 
+    private async buildHistory(conversationId: string): Promise<Anthropic.MessageParam[]> {
+        const saved = await this.conversationRepository.getMessages(conversationId);
+        // drop the last message — it's the current user turn, added separately
+        return saved.slice(0, -1).map((msg) => ({
+            role: msg.sender as "user" | "assistant",
+            content: typeof msg.content === "string"
+                ? msg.content
+                : JSON.stringify(msg.content),
+        }));
+    }
+
     public async process(
         userMessage: string,
         conversationId: string,
         chipAnswer?: ChipAnswer,
+        language: Language = 'en',
     ): Promise<ModulesPayload> {
-        let state = await this.conversationRepository.getCivicState(conversationId)
-            ?? createCivicState();
+        const [state, history] = await Promise.all([
+            this.conversationRepository.getCivicState(conversationId).then(s => s ?? createCivicState(language)),
+            this.buildHistory(conversationId),
+        ]);
 
         if (chipAnswer) {
-            state = mergeChipAnswer(state, chipAnswer);
-            // Chip taps always proceed to Claude — user has answered the clarification
-            const contextNote = buildContextNote(state, true);
-            const payload = await this.anthropic.processWithTools(
-                chipAnswer.label,
-                contextNote,
-            );
-            await this.conversationRepository.updateCivicState(conversationId, state);
+            const merged = mergeChipAnswer(state, chipAnswer);
+            const contextNote = buildContextNote(merged, true);
+            const payload = await this.anthropic.processWithTools(userMessage, contextNote, history);
+            await this.conversationRepository.updateCivicState(conversationId, merged);
             return payload;
         }
 
         const forceAnswer = state.clarificationCount >= MAX_CLARIFICATIONS;
         const contextNote = buildContextNote(state, forceAnswer);
-        const payload = await this.anthropic.processWithTools(userMessage, contextNote);
+        const payload = await this.anthropic.processWithTools(userMessage, contextNote, history);
 
         if (payload.modulesToRender.includes("clarification")) {
-            state = recordClarification(state);
+            await this.conversationRepository.updateCivicState(conversationId, recordClarification(state));
+        } else {
+            await this.conversationRepository.updateCivicState(conversationId, state);
         }
 
-        await this.conversationRepository.updateCivicState(conversationId, state);
         return payload;
     }
 }

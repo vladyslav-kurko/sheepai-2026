@@ -1,16 +1,18 @@
 import { inject } from "inversify";
-import { ApplyMiddleware, Body, Controller, Get, HttpStatusCode, Params, Post, Request } from "@inversifyjs/http-core";
-import { OasParameter, OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversifyjs/http-open-api";
+import { ApplyMiddleware, Body, Controller, Get, HttpStatusCode, Params, Post, Query, Request } from "@inversifyjs/http-core";
+import { OasDeprecated, OasDescription, OasParameter, OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversifyjs/http-open-api";
 
 import { ConversationEntityBuilder, MessageEntityBuilder } from "../../domain";
 import { AppTypes } from "../../container/AppTypes";
 import { ApiErrorHandler } from "../../middleware/ErrorHandler";
 import { ApiError, ApiErrorBuilder, ErrorCode } from "../../errors";
-import { ConversationWithMessagesDTO, CreateConversationRequestDTO, CreatedConversationDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
+import { ConversationListDTO, ConversationWithMessagesDTO, CreateConversationRequestDTO, CreatedConversationDTO, MessageListDTO, MessageResponseDTO, SendMessageRequestDTO } from "./ConversationController.dto";
 import { ConversationRepository } from "../../repository/ConversationRepository";
 import { ConversationPipelineService } from "../../services/ConversationPipelineService";
-import { OptionalAuthMiddleware } from "../../middleware/AuthMiddleware";
+import { AuthMiddleware, OptionalAuthMiddleware } from "../../middleware/AuthMiddleware";
+import { detectLanguage } from "../../services/CivicStateService";
 
+@ApplyMiddleware(OptionalAuthMiddleware)
 @ApplyMiddleware(ApiErrorHandler)
 @Controller("/conversations")
 export class ConversationController {
@@ -23,6 +25,56 @@ export class ConversationController {
     ) {}
 
     @OasTag("Conversations")
+    @OasParameter({ name: "page", in: "query", schema: { type: "integer", default: 1 } })
+    @OasParameter({ name: "limit", in: "query", schema: { type: "integer", default: 20 } })
+    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
+        description: "Paginated list of conversations for the authenticated user",
+        content: { "application/json": { schema: toSchema(ConversationListDTO) } },
+    }))
+    @ApplyMiddleware(AuthMiddleware)
+    @OasDescription("Retrieves a paginated list of conversations for the authenticated user. Requires authentication.")
+    @Get()
+    public async listConversations(
+        @Request() req: any,
+        @Query({ name: "page" }) rawPage: string | undefined,
+        @Query({ name: "limit" }) rawLimit: string | undefined,
+    ): Promise<ConversationListDTO> {
+        const page  = Math.max(1, parseInt(rawPage  ?? "1",  10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(rawLimit ?? "20", 10) || 20));
+        const { items, total } = await this.conversationRepository.getConversationsByUserId(req.userId, page, limit);
+        return { items, total, page, limit };
+    }
+
+    @OasTag("Conversations")
+    @OasDescription("Retrieves a conversation by ID along with its message history. This endpoint is deprecated in favor of GET /conversations/{id}/messages for paginated messages.")
+    @OasParameter({ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Conversation ID" })
+    @OasParameter({ name: "page", in: "query", schema: { type: "integer", default: 1 } })
+    @OasParameter({ name: "limit", in: "query", schema: { type: "integer", default: 20 } })
+    @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
+        description: "Paginated messages for a conversation",
+        content: { "application/json": { schema: toSchema(MessageListDTO) } },
+    }))
+    @OasResponse(HttpStatusCode.NOT_FOUND, (toSchema: ToSchemaFunction) => ({
+        description: "Conversation not found",
+        content: { "application/json": { schema: toSchema(ApiError) } },
+    }))
+    @Get("/:id/messages")
+    public async listMessages(
+        @Params({ name: "id" }) id: string,
+        @Query({ name: "page" }) rawPage: string | undefined,
+        @Query({ name: "limit" }) rawLimit: string | undefined,
+    ): Promise<MessageListDTO> {
+        const conversation = await this.conversationRepository.getConversationById(id);
+        if (!conversation) {
+            throw new ApiErrorBuilder().error(ErrorCode.NotFoundError, `Conversation ${id} not found`);
+        }
+        const page  = Math.max(1, parseInt(rawPage  ?? "1",  10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(rawLimit ?? "20", 10) || 20));
+        const { items, total } = await this.conversationRepository.getMessagesPaginated(id, page, limit);
+        return { items, total, page, limit };
+    }
+
+    @OasTag("Conversations")
     @OasParameter({ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Conversation ID" })
     @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
         description: "Conversation with message history",
@@ -32,6 +84,8 @@ export class ConversationController {
         description: "Conversation not found",
         content: { "application/json": { schema: toSchema(ApiError) } },
     }))
+    @OasDeprecated()
+    @OasDescription("Use GET /conversations/{id}/messages for paginated messages instead")
     @Get("/:id")
     public async getConversationById(
         @Params({ name: "id" }) id: string
@@ -56,7 +110,7 @@ export class ConversationController {
     }))
     public async createConversation(
         @Request() req: any,
-        @Body() body: CreateConversationRequestDTO
+        @Body() body: CreateConversationRequestDTO,
     ): Promise<CreatedConversationDTO> {
         const title = body.message.length > 20 ? body.message.substring(0, 20) + "..." : body.message;
         const conversation = new ConversationEntityBuilder()
@@ -80,6 +134,7 @@ export class ConversationController {
             body.message,
             createdConversation.id,
             body.chipAnswer,
+            detectLanguage(req.headers?.["accept-language"]),
         );
 
         const assistantMessage = new MessageEntityBuilder()
@@ -114,7 +169,7 @@ export class ConversationController {
     public async sendMessage(
         @Request() req: any,
         @Params({ name: "id" }) conversationId: string,
-        @Body() body: SendMessageRequestDTO
+        @Body() body: SendMessageRequestDTO,
     ): Promise<MessageResponseDTO> {
         const conversation = await this.conversationRepository.getConversationById(conversationId);
         if (!conversation) {
@@ -134,6 +189,7 @@ export class ConversationController {
             body.message,
             conversationId,
             body.chipAnswer,
+            detectLanguage(req.headers?.["accept-language"]),
         );
 
         const assistantMessage = new MessageEntityBuilder()

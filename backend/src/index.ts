@@ -6,10 +6,10 @@ import { adapter, container } from "./container";
 
 import { AppTypes } from "./container/AppTypes";
 import { MongoDBClient } from "./repository/client";
-import { UserRepository } from "./repository/UserRepository";
 import { ApiErrorFilter } from "./middleware/ApiErrorFilter";
 
 import { swaggerConfig } from "./openapi";
+import { Repository } from "./repository";
 
 swaggerConfig.provide(container);
 adapter.useGlobalFilters(ApiErrorFilter);
@@ -20,8 +20,8 @@ adapter.build().then(async (application) => {
 
     await database.init();
 
-    const userRepository = container.get<UserRepository>(AppTypes.UserRepository);
-    await userRepository.init();
+    const repositorys = container.get<Repository>(Repository);
+    await repositorys.init();
 
     await application.register(cors, {
         origin: [

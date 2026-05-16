@@ -1,8 +1,11 @@
+export type Language = 'hr' | 'en';
+
 export interface CivicState {
     clarificationCount: number;
     slots: Record<string, string>;
     intent: string | null;
     city: string | null;
+    language: Language;
 }
 
 export interface ChipAnswer {
@@ -11,8 +14,14 @@ export interface ChipAnswer {
     slotValue: string;
 }
 
-export function createCivicState(): CivicState {
-    return { clarificationCount: 0, slots: {}, intent: null, city: null };
+export function detectLanguage(acceptLanguage: string | undefined): Language {
+    if (!acceptLanguage) return 'en';
+    const primary = acceptLanguage.split(',')[0].trim().toLowerCase();
+    return primary.startsWith('hr') ? 'hr' : 'en';
+}
+
+export function createCivicState(language: Language = 'en'): CivicState {
+    return { clarificationCount: 0, slots: {}, intent: null, city: null, language };
 }
 
 export function mergeChipAnswer(state: CivicState, chip: ChipAnswer): CivicState {
@@ -40,9 +49,9 @@ export function buildContextNote(state: CivicState, forceAnswer: boolean): strin
         parts.push(`known slots: ${slotEntries.map(([k, v]) => `${k}=${v}`).join(", ")}`);
     }
 
-    const contextLine = parts.length > 0
-        ? `[Conversation context: ${parts.join("; ")}]\n`
-        : "";
+    parts.push(`language: ${state.language}`);
+
+    const contextLine = `[Conversation context: ${parts.join("; ")}]\n`;
 
     const forceLine = forceAnswer
         ? `[The user has already been asked for clarification ${state.clarificationCount} time(s). Do NOT return a clarification response — give the best answer you can with available context.]\n`

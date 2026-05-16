@@ -18,6 +18,17 @@ export class ConversationRepository {
         private readonly client: MongoDBClient,
     ) { }
 
+    public async init(): Promise<void> {
+        await this.client.safeCreateCollection(this.CONVERSATIONS_COLLECTION);
+        await this.client.safeCreateCollection(this.MESSAGES_COLLECTION);
+
+        await this.client.safeCreateIndex(this.CONVERSATIONS_COLLECTION, { id: 1 }, { unique: true, name: "id_unique" });
+        await this.client.safeCreateIndex(this.CONVERSATIONS_COLLECTION, { userId: 1, createdAt: -1 }, { name: "userId_createdAt" });
+
+        await this.client.safeCreateIndex(this.MESSAGES_COLLECTION, { id: 1 }, { unique: true, name: "id_unique" });
+        await this.client.safeCreateIndex(this.MESSAGES_COLLECTION, { conversationId: 1, createdAt: 1 }, { name: "conversationId_createdAt" });
+    }
+
     public async createConversation(conversation: ConversationEntity): Promise<ConversationEntity> {
         const payload: IConversation = FromConversationEntityMapper.fromDTO(conversation);
         await this.client.getConnection().collection(this.CONVERSATIONS_COLLECTION).insertOne(payload);
@@ -47,6 +58,60 @@ export class ConversationRepository {
         } catch (error) {
             throw new ApiErrorBuilder().error(ErrorCode.DatabaseError, "Failed to add message to conversation").withDetails({ originalError: error instanceof Error ? error.message : error });
         }
+    }
+
+    public async getConversationsByUserId(
+        userId: string,
+        page: number,
+        limit: number,
+    ): Promise<{ items: ConversationEntity[]; total: number }> {
+        const filter = { userId: new UUID(userId) };
+        const [docs, total] = await Promise.all([
+            this.client.getConnection()
+                .collection(this.CONVERSATIONS_COLLECTION)
+                .find(filter)
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .toArray(),
+            this.client.getConnection()
+                .collection(this.CONVERSATIONS_COLLECTION)
+                .countDocuments(filter),
+        ]);
+        const items = docs.map(doc => IConversationMapper.toDTO(doc as unknown as IConversation));
+        return { items, total };
+    }
+
+    public async getMessagesPaginated(
+        conversationId: string,
+        page: number,
+        limit: number,
+    ): Promise<{ items: MessageEntity[]; total: number }> {
+        const filter = { conversationId: new UUID(conversationId) };
+        const [docs, total] = await Promise.all([
+            this.client.getConnection()
+                .collection(this.MESSAGES_COLLECTION)
+                .find(filter)
+                .sort({ createdAt: 1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .toArray(),
+            this.client.getConnection()
+                .collection(this.MESSAGES_COLLECTION)
+                .countDocuments(filter),
+        ]);
+        const items = docs.map(doc => {
+            const msg = doc as unknown as IConversationMessage;
+            return new MessageEntityBuilder()
+                .setId(msg.id.toString())
+                .setConversationId(msg.conversationId.toString())
+                .setSender(msg.sender)
+                .setContent(msg.content)
+                .setCreatedAt(msg.createdAt)
+                .setUpdatedAt(msg.createdAt)
+                .build();
+        });
+        return { items, total };
     }
 
     public async getCivicState(conversationId: string): Promise<CivicState | null> {

@@ -7,4 +7,5 @@ export const AppTypes = {
     TokenService: Symbol.for("TokenService"),
     ScraperService: Symbol.for("ScraperService"),
     ConversationPipelineService: Symbol.for("ConversationPipelineService"),
+    GeocodeService: Symbol.for("GeocodeService"),
 }
