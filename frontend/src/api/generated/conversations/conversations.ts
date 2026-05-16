@@ -6,45 +6,52 @@
  */
 import type {
   ApiError,
+  ConversationListDTO,
   ConversationWithMessagesDTO,
   CreateConversationRequestDTO,
   CreatedConversationDTO,
+  GetConversationsIdMessagesParams,
+  GetConversationsParams,
+  MessageListDTO,
   MessageResponseDTO,
   SendMessageRequestDTO
 } from '../theGoOverAPI.schemas';
 
 import { customFetch } from '../../mutator';
 
-export type getConversationsIdResponse200 = {
-  data: ConversationWithMessagesDTO
+export type getConversationsResponse200 = {
+  data: ConversationListDTO
   status: 200
 }
 
-export type getConversationsIdResponse404 = {
-  data: ApiError
-  status: 404
-}
-
-export type getConversationsIdResponseSuccess = (getConversationsIdResponse200) & {
+export type getConversationsResponseSuccess = (getConversationsResponse200) & {
   headers: Headers;
 };
-export type getConversationsIdResponseError = (getConversationsIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type getConversationsIdResponse = (getConversationsIdResponseSuccess | getConversationsIdResponseError)
+export type getConversationsResponse = (getConversationsResponseSuccess)
 
-export const getGetConversationsIdUrl = (id: string,) => {
+export const getGetConversationsUrl = (params?: GetConversationsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/conversations/${id}`
+  return stringifiedParams.length > 0 ? `/conversations?${stringifiedParams}` : `/conversations`
 }
 
-export const getConversationsId = async (id: string, options?: RequestInit): Promise<getConversationsIdResponse> => {
+/**
+ * Retrieves a paginated list of conversations for the authenticated user. Requires authentication.
+ */
+export const getConversations = async (params?: GetConversationsParams, options?: RequestInit): Promise<getConversationsResponse> => {
 
-  return customFetch<getConversationsIdResponse>(getGetConversationsIdUrl(id),
+  return customFetch<getConversationsResponse>(getGetConversationsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -82,6 +89,100 @@ export const postConversations = async (createConversationRequestDTO: CreateConv
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(createConversationRequestDTO)
+  }
+);}
+
+
+export type getConversationsIdMessagesResponse200 = {
+  data: MessageListDTO
+  status: 200
+}
+
+export type getConversationsIdMessagesResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type getConversationsIdMessagesResponseSuccess = (getConversationsIdMessagesResponse200) & {
+  headers: Headers;
+};
+export type getConversationsIdMessagesResponseError = (getConversationsIdMessagesResponse404) & {
+  headers: Headers;
+};
+
+export type getConversationsIdMessagesResponse = (getConversationsIdMessagesResponseSuccess | getConversationsIdMessagesResponseError)
+
+export const getGetConversationsIdMessagesUrl = (id: string,
+    params?: GetConversationsIdMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/conversations/${id}/messages?${stringifiedParams}` : `/conversations/${id}/messages`
+}
+
+/**
+ * Retrieves a conversation by ID along with its message history. This endpoint is deprecated in favor of GET /conversations/{id}/messages for paginated messages.
+ */
+export const getConversationsIdMessages = async (id: string,
+    params?: GetConversationsIdMessagesParams, options?: RequestInit): Promise<getConversationsIdMessagesResponse> => {
+
+  return customFetch<getConversationsIdMessagesResponse>(getGetConversationsIdMessagesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getConversationsIdResponse200 = {
+  data: ConversationWithMessagesDTO
+  status: 200
+}
+
+export type getConversationsIdResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type getConversationsIdResponseSuccess = (getConversationsIdResponse200) & {
+  headers: Headers;
+};
+export type getConversationsIdResponseError = (getConversationsIdResponse404) & {
+  headers: Headers;
+};
+
+export type getConversationsIdResponse = (getConversationsIdResponseSuccess | getConversationsIdResponseError)
+
+export const getGetConversationsIdUrl = (id: string,) => {
+
+
+
+
+  return `/conversations/${id}`
+}
+
+/**
+ * Use GET /conversations/{id}/messages for paginated messages instead
+ * @deprecated
+ */
+export const getConversationsId = async (id: string, options?: RequestInit): Promise<getConversationsIdResponse> => {
+
+  return customFetch<getConversationsIdResponse>(getGetConversationsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

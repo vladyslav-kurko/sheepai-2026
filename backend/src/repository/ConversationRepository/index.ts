@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import { AppTypes } from "../../container/AppTypes";
 import { MongoDBClient } from "../client";
 import { FromConversationEntityMapper, FromMessageEntityMapper, IConversation, IConversationMapper, IConversationMessage } from "./types";
-import { UUID } from "mongodb";
+import { ObjectId, UUID } from "mongodb";
 import { ConversationEntity, ConversationEntityBuilder, MessageEntity, MessageEntityBuilder } from "../../domain";
 import { ApiErrorBuilder, ErrorCode } from "../../errors";
 import { CivicState } from "../../services/CivicStateService";
@@ -65,7 +65,7 @@ export class ConversationRepository {
         page: number,
         limit: number,
     ): Promise<{ items: ConversationEntity[]; total: number }> {
-        const filter = { userId: new UUID(userId) };
+        const filter = { userId: new ObjectId(userId) };
         const [docs, total] = await Promise.all([
             this.client.getConnection()
                 .collection(this.CONVERSATIONS_COLLECTION)

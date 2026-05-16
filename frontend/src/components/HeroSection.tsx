@@ -49,7 +49,7 @@ export default function HeroSection({ visible = true }: Props) {
 
   return (
     <section className={`card__hero${visible ? '' : ' card__hero--out'}`}>
-      <h1 className="card__title">Uredi svoje papire.</h1>
+      <h1 className="card__title">Vaš vodič kroz papire</h1>
       <p className="card__typewriter">
         {PREFIX}
         <span className="card__typed">{displayed}</span>

@@ -120,8 +120,132 @@
         ]
       }
     },
+    "/conversations": {
+      "get": {
+        "description": "Retrieves a paginated list of conversations for the authenticated user. Requires authentication.",
+        "responses": {
+          "200": {
+            "description": "Paginated list of conversations for the authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListDTO"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation created with initial assistant response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedConversationDTO"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations/{id}/messages": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Paginated messages for a conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Conversation ID"
+          }
+        ],
+        "description": "Retrieves a conversation by ID along with its message history. This endpoint is deprecated in favor of GET /conversations/{id}/messages for paginated messages.",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
     "/conversations/{id}": {
       "get": {
+        "description": "Use GET /conversations/{id}/messages for paginated messages instead",
+        "deprecated": true,
         "responses": {
           "200": {
             "description": "Conversation with message history",
@@ -155,35 +279,6 @@
             "description": "Conversation ID"
           }
         ],
-        "tags": [
-          "Conversations"
-        ]
-      }
-    },
-    "/conversations": {
-      "post": {
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateConversationRequestDTO"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Conversation created with initial assistant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreatedConversationDTO"
-                }
-              }
-            }
-          }
-        },
         "tags": [
           "Conversations"
         ]
@@ -226,6 +321,45 @@
         ],
         "tags": [
           "Conversations"
+        ]
+      }
+    },
+    "/maps/geocode": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodeRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Geocoded coordinates for the given address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeocodeResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Maps"
         ]
       }
     }
@@ -288,22 +422,30 @@
           "password"
         ]
       },
-      "ConversationWithMessagesDTO": {
+      "ConversationListDTO": {
         "properties": {
-          "conversation": {
-            "$ref": "#/components/schemas/ConversationEntity"
-          },
-          "messages": {
+          "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MessageEntity"
+              "$ref": "#/components/schemas/ConversationEntity"
             }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
           }
         },
         "type": "object",
         "required": [
-          "conversation",
-          "messages"
+          "items",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "ConversationEntity": {
@@ -334,6 +476,106 @@
           "title",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "MessageListDTO": {
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantMessageEntity"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "AssistantMessageEntity": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "$ref": "#/components/schemas/ModulesPayloadSchema"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "conversationId",
+          "sender",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ModulesPayloadSchema": {
+        "properties": {
+          "modulesToRender": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "modulesToRender",
+          "data"
+        ]
+      },
+      "ConversationWithMessagesDTO": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationEntity"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageEntity"
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation",
+          "messages"
         ]
       },
       "MessageEntity": {
@@ -422,62 +664,6 @@
           "initialAnswer"
         ]
       },
-      "AssistantMessageEntity": {
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "conversationId": {
-            "type": "string"
-          },
-          "sender": {
-            "type": "string",
-            "enum": [
-              "user",
-              "assistant"
-            ]
-          },
-          "content": {
-            "$ref": "#/components/schemas/ModulesPayloadSchema"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "conversationId",
-          "sender",
-          "content",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ModulesPayloadSchema": {
-        "properties": {
-          "modulesToRender": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "data": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "modulesToRender",
-          "data"
-        ]
-      },
       "SendMessageRequestDTO": {
         "properties": {
           "message": {
@@ -503,6 +689,37 @@
         "type": "object",
         "required": [
           "message"
+        ]
+      },
+      "GeocodeRequestDTO": {
+        "properties": {
+          "address": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "address"
+        ]
+      },
+      "GeocodeResponseDTO": {
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lng",
+          "displayName"
         ]
       }
     }
