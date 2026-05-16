@@ -5,6 +5,7 @@ import { FromConversationEntityMapper, FromMessageEntityMapper, IConversation, I
 import { UUID } from "mongodb";
 import { ConversationEntity, ConversationEntityBuilder, MessageEntity, MessageEntityBuilder } from "../../domain";
 import { ApiErrorBuilder, ErrorCode } from "../../errors";
+import { CivicState } from "../../services/CivicStateService";
 
 @injectable()
 export class ConversationRepository {
@@ -44,8 +45,21 @@ export class ConversationRepository {
             await this.client.getConnection().collection(this.MESSAGES_COLLECTION).insertOne(payload);
             return message;
         } catch (error) {
-            throw new ApiErrorBuilder().error(ErrorCode.DatabaseError, "Failed to add message to conversation").withDetails({ originalError: error instanceof Error ? error.message : error }).toJSON();
+            throw new ApiErrorBuilder().error(ErrorCode.DatabaseError, "Failed to add message to conversation").withDetails({ originalError: error instanceof Error ? error.message : error });
         }
+    }
+
+    public async getCivicState(conversationId: string): Promise<CivicState | null> {
+        const doc = await this.client.getConnection()
+            .collection(this.CONVERSATIONS_COLLECTION)
+            .findOne({ id: new UUID(conversationId) }, { projection: { civicState: 1 } });
+        return (doc as unknown as IConversation)?.civicState ?? null;
+    }
+
+    public async updateCivicState(conversationId: string, state: CivicState): Promise<void> {
+        await this.client.getConnection()
+            .collection(this.CONVERSATIONS_COLLECTION)
+            .updateOne({ id: new UUID(conversationId) }, { $set: { civicState: state } });
     }
 
     public async getMessages(conversationId: string): Promise<MessageEntity[]> {

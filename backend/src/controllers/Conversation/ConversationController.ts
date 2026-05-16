@@ -58,8 +58,6 @@ export class ConversationController {
         @Request() req: any,
         @Body() body: CreateConversationRequestDTO
     ): Promise<CreatedConversationDTO> {
-        const modulesPayload = await this.pipelineService.process(body.message);
-
         const title = body.message.length > 20 ? body.message.substring(0, 20) + "..." : body.message;
         const conversation = new ConversationEntityBuilder()
             .setTitle(title)
@@ -77,6 +75,12 @@ export class ConversationController {
             .setUpdatedAt(new Date())
             .build();
         await this.conversationRepository.addMessage(userMessage);
+
+        const modulesPayload = await this.pipelineService.process(
+            body.message,
+            createdConversation.id,
+            body.chipAnswer,
+        );
 
         const assistantMessage = new MessageEntityBuilder()
             .setContent(modulesPayload)
@@ -126,7 +130,11 @@ export class ConversationController {
             .build();
         await this.conversationRepository.addMessage(userMessage);
 
-        const modulesPayload = await this.pipelineService.process(body.message);
+        const modulesPayload = await this.pipelineService.process(
+            body.message,
+            conversationId,
+            body.chipAnswer,
+        );
 
         const assistantMessage = new MessageEntityBuilder()
             .setContent(modulesPayload)
