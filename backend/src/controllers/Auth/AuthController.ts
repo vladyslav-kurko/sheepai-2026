@@ -3,28 +3,37 @@ import { OasRequestBody, OasResponse, OasSummary, OasTag } from "@inversifyjs/ht
 import { ToSchemaFunction } from "@inversifyjs/http-open-api/v3Dot2";
 import { inject } from "inversify";
 import { AuthService } from "../../services/AuthService";
+import { Config } from "../../config";
 import { ApiError } from "../../errors";
 import { ApiErrorHandler } from "../../middleware/ErrorHandler";
+import { AppTypes } from "../../container/AppTypes";
 import { SigninRequest, SignupRequest } from "./dto";
-
-const ACCESS_COOKIE_OPTIONS = {
-    httpOnly: true,
-    path: "/",
-    sameSite: "strict" as const,
-};
-
-const REFRESH_COOKIE_OPTIONS = {
-    httpOnly: true,
-    path: "/auth/refresh",
-    sameSite: "strict" as const,
-};
 
 @ApplyMiddleware(ApiErrorHandler)
 @Controller("/auth")
 export class AuthController {
     constructor(
-        @inject(AuthService) private readonly authService: AuthService
+        @inject(AuthService) private readonly authService: AuthService,
+        @inject(AppTypes.Config) private readonly config: Config,
     ) { }
+
+    private get accessCookieOptions() {
+        return {
+            httpOnly: true,
+            path: "/",
+            secure: this.config.cookieSecure,
+            sameSite: (this.config.cookieSecure ? "none" : "lax") as "none" | "lax",
+        };
+    }
+
+    private get refreshCookieOptions() {
+        return {
+            httpOnly: true,
+            path: "/auth/refresh",
+            secure: this.config.cookieSecure,
+            sameSite: (this.config.cookieSecure ? "none" : "lax") as "none" | "lax",
+        };
+    }
 
     @OasTag("Authentication")
     @OasSummary("Register a new user")
@@ -42,8 +51,8 @@ export class AuthController {
     @Post("signup")
     public async signup(@Body() body: SignupRequest, @Response() reply: any): Promise<object> {
         const tokens = await this.authService.signup(body.email, body.password, body.name);
-        reply.setCookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
-        reply.setCookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
+        reply.setCookie("accessToken", tokens.accessToken, this.accessCookieOptions);
+        reply.setCookie("refreshToken", tokens.refreshToken, this.refreshCookieOptions);
         return {};
     }
 
@@ -63,8 +72,8 @@ export class AuthController {
     @Post("signin")
     public async signin(@Body() body: SigninRequest, @Response() reply: any): Promise<object> {
         const tokens = await this.authService.signin(body.email, body.password);
-        reply.setCookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
-        reply.setCookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
+        reply.setCookie("accessToken", tokens.accessToken, this.accessCookieOptions);
+        reply.setCookie("refreshToken", tokens.refreshToken, this.refreshCookieOptions);
         return {};
     }
 
@@ -80,7 +89,7 @@ export class AuthController {
     @Post("refresh")
     public refresh(@Cookies("refreshToken") refreshToken: string, @Response() reply: any): object {
         const { accessToken } = this.authService.refresh(refreshToken);
-        reply.setCookie("accessToken", accessToken, ACCESS_COOKIE_OPTIONS);
+        reply.setCookie("accessToken", accessToken, this.accessCookieOptions);
         return {};
     }
 }

@@ -24,10 +24,7 @@ adapter.build().then(async (application) => {
     await repositorys.init();
 
     await application.register(cors, {
-        origin: [
-            config.corsOrigin,
-            "http://localhost:3000"
-        ],
+        origin: config.corsOrigins,
         credentials: true,
     });
 
