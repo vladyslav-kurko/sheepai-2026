@@ -26,6 +26,27 @@ import './HomePage.css';
 
 // const EMPTY_CHIP: ChipAnswerDTO = { label: '', slotKey: '', slotValue: '' };
 
+type RawContent = { modulesToRender: string[]; data: Record<string, unknown> };
+
+function unwrapContent(content: RawContent): RawContent {
+  const rawMarkdown = (content.data.text as { markdown?: string } | undefined)?.markdown ?? '';
+  const jsonStart = rawMarkdown.indexOf('{');
+  if (jsonStart !== -1) {
+    try {
+      const embedded = JSON.parse(rawMarkdown.slice(jsonStart)) as { modulesToRender?: string[]; data?: Record<string, unknown> };
+      if (embedded && Array.isArray(embedded.modulesToRender)) {
+        return {
+          modulesToRender: embedded.modulesToRender,
+          data: { ...content.data, ...embedded.data },
+        };
+      }
+    } catch {
+      // not a JSON block
+    }
+  }
+  return content;
+}
+
 export default function HomePage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>();
 
@@ -53,20 +74,20 @@ export default function HomePage() {
         const res = await getConversationsId(urlConversationId!);
         const { messages: raw } = res as unknown as ConversationWithMessagesDTO;
 
-        setMessages(raw.map((msg) => ({
-          id: msg.id,
-          role: msg.sender as 'user' | 'assistant',
-          content: msg.sender === 'user'
-            ? (msg.content as unknown as string)
-            : ((msg.content as { data?: { text?: { markdown?: string } } })?.data?.text?.markdown ?? ''),
-        })));
+        setMessages(raw.map((msg) => {
+          if (msg.sender === 'user') {
+            return { id: msg.id, role: 'user' as const, content: msg.content as unknown as string };
+          }
+          const { data } = unwrapContent(msg.content as unknown as RawContent);
+          return { id: msg.id, role: 'assistant' as const, content: (data.text as { markdown?: string } | undefined)?.markdown ?? '' };
+        }));
 
         const lastAssistant = [...raw].reverse().find((m) => m.sender === 'assistant');
         if (lastAssistant) {
-          const c = lastAssistant.content as { modulesToRender?: string[]; data?: Record<string, unknown> };
-          const sidebarKeys = (c.modulesToRender ?? []).filter((k) => k !== 'text') as ModuleKey[];
-          if (sidebarKeys.length > 0 && c.data) {
-            setActiveModules({ modulesToRender: sidebarKeys, data: c.data as ModulesPayload['data'] });
+          const { modulesToRender, data } = unwrapContent(lastAssistant.content as unknown as RawContent);
+          const sidebarKeys = modulesToRender.filter((k) => k !== 'text') as ModuleKey[];
+          if (sidebarKeys.length > 0) {
+            setActiveModules({ modulesToRender: sidebarKeys, data: data as ModulesPayload['data'] });
           }
         }
       } catch {
@@ -88,6 +109,7 @@ export default function HomePage() {
       const newId = res.conversation.id;
       setConversationId(newId);
       window.history.replaceState(null, '', `/c/${newId}`);
+      window.dispatchEvent(new CustomEvent('conversation-created'));
       content = res.initialAnswer.content as typeof content;
     } else {
       const res = (await postConversationsMessagesId(conversationId, {
@@ -98,11 +120,11 @@ export default function HomePage() {
       content = res.message.content as typeof content;
     }
 
-    const data = content.data as ModulesPayload['data'];
+    const { modulesToRender, data } = unwrapContent(content as RawContent);
+
     const replyText = (data.text as { markdown?: string } | undefined)?.markdown ?? '';
-    // filter out 'text' — it goes in the chat bubble, not the sidebar
-    const sidebarKeys = content.modulesToRender.filter((k) => k !== 'text') as ModuleKey[];
-    const modules: ModulesPayload = { modulesToRender: sidebarKeys, data };
+    const sidebarKeys = modulesToRender.filter((k) => k !== 'text') as ModuleKey[];
+    const modules: ModulesPayload = { modulesToRender: sidebarKeys, data: data as ModulesPayload['data'] };
     return { replyText, modules };
   }
 

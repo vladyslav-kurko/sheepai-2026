@@ -1,14 +1,18 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getConversations } from '../api/generated/conversations/conversations';
+import type { ConversationEntity, ConversationListDTO } from '../api/generated/theGoOverAPI.schemas';
 import './Sidebar.css';
 
-const MOCK_HISTORY = [
-  { id: '1', title: 'Osobna iskaznica — kako dobiti?', date: 'Danas' },
-  { id: '2', title: 'OIB — registracija', date: 'Jučer' },
-  { id: '3', title: 'Vozačka dozvola — obnova', date: '14. sij.' },
-  { id: '4', title: 'Registracija obrta — koraci', date: '10. sij.' },
-  { id: '5', title: 'Putovnica — potrebni dokumenti', date: '5. sij.' },
-  { id: '6', title: 'Prijava u HZZ — nezaposlenost', date: '2. sij.' },
-];
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+}
 
 function ChatBubbleIcon() {
   return (
@@ -20,22 +24,62 @@ function ChatBubbleIcon() {
 
 export default function Sidebar() {
   const { user } = useAuth();
-  if (!user) return null;
+  const { conversationId: activeId } = useParams<{ conversationId?: string }>();
+  const navigate = useNavigate();
+  const [conversations, setConversations] = useState<ConversationEntity[]>([]);
+
+  async function fetchConversations() {
+    try {
+      const res = await getConversations() as unknown as ConversationListDTO;
+      setConversations(res.items);
+    } catch {
+      // cookie expired or no auth — leave list empty
+    }
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchConversations();
+
+    window.addEventListener('conversation-created', fetchConversations);
+    return () => window.removeEventListener('conversation-created', fetchConversations);
+  }, [user]);
 
   return (
     <aside className="sidebar">
-      <p className="sidebar__label">History</p>
-      <div className="sidebar__list">
-        {MOCK_HISTORY.map((item) => (
-          <button key={item.id} className="sidebar__item" type="button">
-            <span className="sidebar__item-icon"><ChatBubbleIcon /></span>
-            <span className="sidebar__item-body">
-              <span className="sidebar__item-title">{item.title}</span>
-              <span className="sidebar__item-date">{item.date}</span>
-            </span>
-          </button>
-        ))}
+      <div className="sidebar__header">
+        <span className="sidebar__label">History</span>
+        <Link to="/" className="sidebar__new-chat">+ New chat</Link>
       </div>
+
+      {user ? (
+        <div className="sidebar__list">
+          {conversations.map((item) => (
+            <button
+              key={item.id}
+              className={`sidebar__item${item.id === activeId ? ' sidebar__item--active' : ''}`}
+              type="button"
+              onClick={() => navigate(`/c/${item.id}`)}
+            >
+              <span className="sidebar__item-icon"><ChatBubbleIcon /></span>
+              <span className="sidebar__item-body">
+                <span className="sidebar__item-title">{item.title}</span>
+                <span className="sidebar__item-date">{formatDate(item.createdAt)}</span>
+              </span>
+            </button>
+          ))}
+          {conversations.length === 0 && (
+            <p className="sidebar__empty">No conversations yet</p>
+          )}
+        </div>
+      ) : (
+        <div className="sidebar__auth-prompt">
+          <p className="sidebar__auth-text">
+            Sign in to save and revisit your conversation history
+          </p>
+          <Link to="/signin" className="sidebar__auth-link">Sign in</Link>
+        </div>
+      )}
     </aside>
   );
 }

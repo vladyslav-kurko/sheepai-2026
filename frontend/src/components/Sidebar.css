@@ -1,6 +1,6 @@
 .sidebar {
   position: fixed;
-  top: 80px;
+  top: 56px;
   left: 0;
   bottom: 0;
   width: 210px;
@@ -23,21 +23,46 @@
   .sidebar { display: none; }
 }
 
+/* ── Header row ── */
+.sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px 10px 14px;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.35);
+  flex-shrink: 0;
+}
+
 .sidebar__label {
-  margin: 0;
-  padding: 14px 14px 10px;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.9px;
   text-transform: uppercase;
   color: #94A3B8;
-  border-bottom: 1px solid rgba(203, 213, 225, 0.35);
 }
 
+.sidebar__new-chat {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0369A1;
+  text-decoration: none;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  transition: background 130ms ease;
+  white-space: nowrap;
+}
+
+.sidebar__new-chat:hover {
+  background: #DBEAFE;
+}
+
+/* ── Conversation list ── */
 .sidebar__list {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 6px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -54,7 +79,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 8px 8px;
+  padding: 8px;
   border: none;
   background: none;
   border-radius: 8px;
@@ -66,6 +91,14 @@
 
 .sidebar__item:hover { background: rgba(255, 255, 255, 0.72); }
 .sidebar__item:active { background: rgba(255, 255, 255, 0.9); }
+
+.sidebar__item--active {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 0 0 1.5px rgba(3, 105, 161, 0.2);
+}
+
+.sidebar__item--active .sidebar__item-icon { color: #0369A1; }
+.sidebar__item--active .sidebar__item-title { color: #0369A1; font-weight: 600; }
 
 .sidebar__item-icon {
   flex-shrink: 0;
@@ -99,3 +132,42 @@
   color: #94A3B8;
   font-weight: 400;
 }
+
+.sidebar__empty {
+  margin: 16px 8px 0;
+  font-size: 12.5px;
+  color: #94A3B8;
+  text-align: center;
+}
+
+/* ── Unauthenticated prompt ── */
+.sidebar__auth-prompt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 12px;
+  text-align: center;
+}
+
+.sidebar__auth-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94A3B8;
+  line-height: 1.55;
+}
+
+.sidebar__auth-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: #0369A1;
+  transition: background 130ms ease;
+}
+
+.sidebar__auth-link:hover { background: #0284C7; }

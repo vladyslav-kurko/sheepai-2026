@@ -31,6 +31,44 @@ export interface ConversationEntity {
   updatedAt: string;
 }
 
+export interface ConversationListDTO {
+  items: ConversationEntity[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type AssistantMessageEntitySender = typeof AssistantMessageEntitySender[keyof typeof AssistantMessageEntitySender];
+
+
+export const AssistantMessageEntitySender = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export type ModulesPayloadSchemaData = { [key: string]: unknown };
+
+export interface ModulesPayloadSchema {
+  modulesToRender: string[];
+  data: ModulesPayloadSchemaData;
+}
+
+export interface AssistantMessageEntity {
+  id: string;
+  conversationId: string;
+  sender: AssistantMessageEntitySender;
+  content: ModulesPayloadSchema;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageListDTO {
+  items: AssistantMessageEntity[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export type MessageEntitySender = typeof MessageEntitySender[keyof typeof MessageEntitySender];
 
 
@@ -66,30 +104,6 @@ export interface CreateConversationRequestDTO {
   chipAnswer: ChipAnswerDTO;
 }
 
-export type AssistantMessageEntitySender = typeof AssistantMessageEntitySender[keyof typeof AssistantMessageEntitySender];
-
-
-export const AssistantMessageEntitySender = {
-  user: 'user',
-  assistant: 'assistant',
-} as const;
-
-export type ModulesPayloadSchemaData = { [key: string]: unknown };
-
-export interface ModulesPayloadSchema {
-  modulesToRender: string[];
-  data: ModulesPayloadSchemaData;
-}
-
-export interface AssistantMessageEntity {
-  id: string;
-  conversationId: string;
-  sender: AssistantMessageEntitySender;
-  content: ModulesPayloadSchema;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface CreatedConversationDTO {
   conversation: ConversationEntity;
   initialAnswer: AssistantMessageEntity;
@@ -103,4 +117,24 @@ export interface SendMessageRequestDTO {
 export interface MessageResponseDTO {
   message: AssistantMessageEntity;
 }
+
+export interface GeocodeRequestDTO {
+  address: string;
+}
+
+export interface GeocodeResponseDTO {
+  lat: number;
+  lng: number;
+  displayName: string;
+}
+
+export type GetConversationsParams = {
+limit?: number;
+page?: number;
+};
+
+export type GetConversationsIdMessagesParams = {
+limit?: number;
+page?: number;
+};
 
