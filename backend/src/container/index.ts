@@ -10,6 +10,7 @@ import { AnthropicChatService } from "../services/Anthropic/AnthropicChatService
 import { AuthService } from "../services/AuthService";
 import { TokenService } from "../services/TokenService";
 import { ApiErrorHandler } from "../middleware/ErrorHandler";
+import { ApiErrorFilter } from "../middleware/ApiErrorFilter";
 import { AuthMiddleware, OptionalAuthMiddleware } from "../middleware/AuthMiddleware";
 import { MongoDBClient } from "../repository/client";
 import { UserRepository } from "../repository/UserRepository";
@@ -36,6 +37,7 @@ container.bind<ScraperService>(AppTypes.ScraperService).to(ScraperService).inSin
 container.bind<AnthropicChatService>(AnthropicChatService).toSelf().inSingletonScope();
 container.bind<ConversationPipelineService>(AppTypes.ConversationPipelineService).to(ConversationPipelineService).inSingletonScope();
 container.bind<ApiErrorHandler>(ApiErrorHandler).toSelf();
+container.bind<ApiErrorFilter>(ApiErrorFilter).toSelf().inSingletonScope();
 container.bind<AuthMiddleware>(AuthMiddleware).toSelf();
 container.bind<OptionalAuthMiddleware>(OptionalAuthMiddleware).toSelf();
 

@@ -1,4 +1,7 @@
+import { container } from "../container";
+import { AppTypes } from "../container/AppTypes";
 import { ApiError, ApiErrorBuilder, ErrorCode } from "../errors";
+import { Logger } from "../utils";
 
 interface ErrorHandler<
     TRequest = any,
@@ -22,16 +25,28 @@ export class ApiErrorHandler implements ErrorHandler {
         try {
             await next();
         } catch (error) {
+            const logger = container.get<Logger>(AppTypes.Logger);
+
+            logger.error("An error occurred during request processing", error instanceof Error ? error : new Error(String(error)));
+
             if (error instanceof ApiErrorBuilder) {
-                response.status(error.statusCode).json(error.toJSON());
+                return response.status(error.statusCode).json(error.toJSON());
             }
 
             if (error instanceof ApiError) {
-                response.status(error.statusCode).json(error);
+                return response.status(error.statusCode).json(error);
             }
 
-            const genericError = new ApiErrorBuilder().error(ErrorCode.InternalServerError, "An unexpected error occurred").withDetails(error);
-            response.status(genericError.statusCode).json(genericError.toJSON());
+            // Plain objects thrown via .toJSON() (e.g. from repository layer)
+            if (error !== null && typeof error === "object" && "statusCode" in error && "message" in error) {
+                const plain = error as { statusCode: number; message: string };
+                return response.status(plain.statusCode).json(plain);
+            }
+
+            const genericError = new ApiErrorBuilder()
+                .error(ErrorCode.InternalServerError, "An unexpected error occurred")
+                .withDetails(error);
+            return response.status(genericError.statusCode).json(genericError.toJSON());
         }
     }
 }

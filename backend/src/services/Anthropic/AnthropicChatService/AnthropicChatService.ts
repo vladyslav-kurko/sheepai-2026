@@ -20,7 +20,7 @@ After gathering information, return ONLY a valid JSON object matching this struc
 {
   modulesToRender: Array of keys where you have data, chosen from:
     "text"|"alert"|"links"|"faq"|"download_list"|"quick_actions"|"status_tracker"|
-    "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill",
+    "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill"|"clarification",
   data: {
     text?: { markdown: string },
     alert?: { level:"info"|"warning"|"error"|"success", title:string, body?:string },
@@ -36,14 +36,21 @@ After gathering information, return ONLY a valid JSON object matching this struc
     fee_calculator?: { items:[{id:string, type:"fixed"|"stepper"|"checkbox", label:string, unitPrice:number}], currency?:string },
     appointment_finder?: { date:string, slots:[{time:string, taken:boolean}], bookingUrl?:string },
     map?: { address:string, lat?:number, lng?:number, routes?:[{mode:"walk"|"transit"|"drive", duration:string}] },
-    form_prefill?: { fields:[{label:string, value?:string, prefilled:boolean}], formUrl?:string, formName?:string }
+    form_prefill?: { fields:[{label:string, value?:string, prefilled:boolean}], formUrl?:string, formName?:string },
+    clarification?: { question:string, chips:[{label:string, slotKey:string, slotValue:string}] }
   }
 }
 
 Rules:
+- ALWAYS respond with ONLY the JSON object, never with prose or explanation
+- If the question is unclear or off-topic, still return JSON with a text module explaining in Croatian/English
 - modulesToRender must only list keys that have data entries
 - Use Croatian context (EUR, Croatian departments, Croatian addresses)
-- For process_timeline: actor "user" = user acts, "city" = government acts, "done" = completed`;
+- For process_timeline: actor "user" = user acts, "city" = government acts, "done" = completed
+- Use "clarification" ONLY when the query is genuinely too vague to act on (missing the single key piece of information)
+- A clarification response must have ONLY "clarification" in modulesToRender — no other modules alongside it
+- Chips slotKey must be "__intent__" for intent disambiguation, "city" for city, or the specific slot name
+- If conversation context is already provided at the top of the message, act on it — do not ask again`;
 
 const SEARCH_TOOL: Anthropic.Tool = {
     name: "search_gov_site",
@@ -86,9 +93,10 @@ export class AnthropicChatService {
         }
     }
 
-    public async processWithTools(userMessage: string): Promise<ModulesPayload> {
+    public async processWithTools(userMessage: string, contextNote: string = ""): Promise<ModulesPayload> {
+        const fullMessage = contextNote ? `${contextNote}\n${userMessage}` : userMessage;
         const messages: Anthropic.MessageParam[] = [
-            { role: "user", content: userMessage },
+            { role: "user", content: fullMessage },
         ];
 
         try {
@@ -106,10 +114,17 @@ export class AnthropicChatService {
                     if (!textBlock || textBlock.type !== "text") {
                         throw new Error("No text in final response");
                     }
-                    const json = textBlock.text.trim()
+                    const raw = textBlock.text.trim()
                         .replace(/^```(?:json)?\n?/, "")
                         .replace(/\n?```$/, "");
-                    return JSON.parse(json) as ModulesPayload;
+                    try {
+                        return JSON.parse(raw) as ModulesPayload;
+                    } catch {
+                        return {
+                            modulesToRender: ["text"],
+                            data: { text: { markdown: textBlock.text.trim() } },
+                        };
+                    }
                 }
 
                 if (response.stop_reason === "tool_use") {

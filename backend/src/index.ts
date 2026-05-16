@@ -7,10 +7,12 @@ import { adapter, container } from "./container";
 import { AppTypes } from "./container/AppTypes";
 import { MongoDBClient } from "./repository/client";
 import { UserRepository } from "./repository/UserRepository";
+import { ApiErrorFilter } from "./middleware/ApiErrorFilter";
 
 import { swaggerConfig } from "./openapi";
 
 swaggerConfig.provide(container);
+adapter.useGlobalFilters(ApiErrorFilter);
 
 adapter.build().then(async (application) => {
     const config = container.get<Config>(AppTypes.Config);

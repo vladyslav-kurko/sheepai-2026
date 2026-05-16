@@ -193,6 +193,19 @@ export interface FormPrefillData {
   formName?: string;
 }
 
+// ─── Clarification ────────────────────────────────────────────────────────────
+
+export interface ClarificationChip {
+  label: string;
+  slotKey: string;   // "__intent__" | "city" | specific slot name
+  slotValue: string;
+}
+
+export interface ClarificationData {
+  question: string;
+  chips: ClarificationChip[];
+}
+
 // ─── Union for dynamic rendering ──────────────────────────────────────────────
 
 export type ModuleKey =
@@ -210,7 +223,8 @@ export type ModuleKey =
   | 'fee_calculator'
   | 'appointment_finder'
   | 'map'
-  | 'form_prefill';
+  | 'form_prefill'
+  | 'clarification';
 
 export interface ModulesPayload {
   modulesToRender: ModuleKey[];
@@ -230,5 +244,6 @@ export interface ModulesPayload {
     appointment_finder?: AppointmentFinderData;
     map?:                MapRouteData;
     form_prefill?:       FormPrefillData;
+    clarification?:      ClarificationData;
   };
 }

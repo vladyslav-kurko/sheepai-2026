@@ -12,7 +12,7 @@ export class MessageEntity {
     @OasSchemaProperty({ type: "string", enum: ["user", "assistant"] })
     sender!: MessageActor;
 
-    @OasSchemaProperty({ type: "string" })
+    @OasSchemaProperty({ type: "object", additionalProperties: true })
     content!: any;
 
     @OasSchemaProperty({ type: "string" })
