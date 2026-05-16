@@ -10,13 +10,22 @@ import { ModulesPayload } from "../../../controllers/Conversation/MessageModule.
 
 const MODULES_PAYLOAD_SCHEMA = `
 {
-  modulesToRender: Array of zero or more of: "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill",
+  modulesToRender: Array of zero or more of:
+    "text"|"alert"|"links"|"faq"|"download_list"|"quick_actions"|"status_tracker"|
+    "hours"|"checklist"|"process_timeline"|"contact"|"fee_calculator"|"appointment_finder"|"map"|"form_prefill",
   data: {
-    hours?: { schedule: [{day:string, time:string}], isOpenNow:boolean, holidayWarning?:string },
-    checklist?: { items: [{id:string, name:string, tip?:string}] },
-    process_timeline?: { steps: [{title:string, actor:"user"|"city"|"done", duration:string}] },
+    text?: { markdown: string },
+    alert?: { level:"info"|"warning"|"error"|"success", title:string, body?:string },
+    links?: { items:[{label:string, url:string, description?:string}] },
+    faq?: { items:[{question:string, answer:string}] },
+    download_list?: { items:[{name:string, url:string, fileType?:string, description?:string}] },
+    quick_actions?: { actions:[{label:string, url:string, variant?:"primary"|"secondary", icon?:string}] },
+    status_tracker?: { steps:[{label:string, status:"pending"|"in_progress"|"completed"|"rejected", date?:string, note?:string}], currentStep:number },
+    hours?: { schedule:[{day:string, time:string}], isOpenNow:boolean, holidayWarning?:string },
+    checklist?: { items:[{id:string, name:string, tip?:string}] },
+    process_timeline?: { steps:[{title:string, actor:"user"|"city"|"done", duration:string}] },
     contact?: { department:string, phone?:string, email?:string, address?:string, bookingUrl?:string },
-    fee_calculator?: { items: [{id:string, type:"fixed"|"stepper"|"checkbox", label:string, unitPrice:number}], currency?:string },
+    fee_calculator?: { items:[{id:string, type:"fixed"|"stepper"|"checkbox", label:string, unitPrice:number}], currency?:string },
     appointment_finder?: { date:string, slots:[{time:string, taken:boolean}], bookingUrl?:string },
     map?: { address:string, lat?:number, lng?:number, routes?:[{mode:"walk"|"transit"|"drive", duration:string}] },
     form_prefill?: { fields:[{label:string, value?:string, prefilled:boolean}], formUrl?:string, formName?:string }
