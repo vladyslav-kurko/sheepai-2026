@@ -5,6 +5,8 @@ export enum ErrorCode {
     NotFoundError = "NOT_FOUND_ERROR",
     InternalServerError = "INTERNAL_SERVER_ERROR",
     AssistantError = "ASSISTANT_ERROR",
+    UnauthorizedError = "UNAUTHORIZED_ERROR",
+    ConflictError = "CONFLICT_ERROR",
 }
 
 const ErrorCodeToStatusCodeMapping = {
@@ -12,6 +14,8 @@ const ErrorCodeToStatusCodeMapping = {
     [ErrorCode.NotFoundError]: 404,
     [ErrorCode.InternalServerError]: 500,
     [ErrorCode.AssistantError]: 500,
+    [ErrorCode.UnauthorizedError]: 401,
+    [ErrorCode.ConflictError]: 409,
 }
 
 @OasSchema()
