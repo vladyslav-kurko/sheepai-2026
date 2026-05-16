@@ -71,7 +71,6 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const reply = await sendToBackend(trimmed);
       const reply = await sendToBackend(normalisedText, activeLanguage);
       setMessages((prev) => [
         ...prev,
