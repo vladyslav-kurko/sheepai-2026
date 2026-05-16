@@ -1,6 +1,6 @@
 import { inject } from "inversify";
 import { ApplyMiddleware, Body, Controller, Get, HttpStatusCode, Params, Post, Request } from "@inversifyjs/http-core";
-import { OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversifyjs/http-open-api";
+import { OasParameter, OasRequestBody, OasResponse, OasTag, ToSchemaFunction } from "@inversifyjs/http-open-api";
 
 import { ConversationEntityBuilder, MessageEntityBuilder } from "../../domain";
 import { AppTypes } from "../../container/AppTypes";
@@ -11,7 +11,7 @@ import { ConversationRepository } from "../../repository/ConversationRepository"
 import { ConversationPipelineService } from "../../services/ConversationPipelineService";
 import { OptionalAuthMiddleware } from "../../middleware/AuthMiddleware";
 
-@ApplyMiddleware(ApiErrorHandler, OptionalAuthMiddleware)
+@ApplyMiddleware(ApiErrorHandler)
 @Controller("/conversations")
 export class ConversationController {
 
@@ -23,6 +23,7 @@ export class ConversationController {
     ) {}
 
     @OasTag("Conversations")
+    @OasParameter({ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Conversation ID" })
     @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
         description: "Conversation with message history",
         content: { "application/json": { schema: toSchema(ConversationWithMessagesDTO) } },
@@ -90,7 +91,14 @@ export class ConversationController {
     }
 
     @OasTag("Conversations")
-    @Post(":id/messages")
+    @OasParameter({
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "string" },
+        description: "Conversation ID"
+    })
+    @Post("messages/:id")
     @OasResponse(HttpStatusCode.OK, (toSchema: ToSchemaFunction) => ({
         description: "Assistant response to the new message",
         content: { "application/json": { schema: toSchema(MessageResponseDTO) } },
