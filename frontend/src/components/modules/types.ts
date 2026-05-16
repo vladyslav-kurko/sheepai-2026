@@ -110,6 +110,37 @@ export interface FormPrefillData {
   formName?: string;         // optional — e.g. "MUP-1 Application Form"
 }
 
+// ─── Alert ────────────────────────────────────────────────────────────────────
+
+export interface AlertData {
+  level: 'info' | 'warning' | 'error';
+  title: string;
+  body: string;
+}
+
+// ─── Links ────────────────────────────────────────────────────────────────────
+
+export interface LinkItem {
+  label: string;
+  url: string;
+  description?: string;
+}
+
+export interface LinksData {
+  items: LinkItem[];
+}
+
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface FaqData {
+  items: FaqItem[];
+}
+
 // ─── Union for dynamic rendering ──────────────────────────────────────────────
 //
 // The backend sends modulesToRender + a data map.
@@ -123,11 +154,15 @@ export type ModuleKey =
   | 'fee_calculator'
   | 'appointment_finder'
   | 'map'
-  | 'form_prefill';
+  | 'form_prefill'
+  | 'alert'
+  | 'links'
+  | 'faq';
 
 export interface ModulesPayload {
   modulesToRender: ModuleKey[];
   data: {
+    text?:               { markdown: string };
     hours?:              OfficeHoursData;
     checklist?:          DocumentChecklistData;
     process_timeline?:   ProcessTimelineData;
@@ -136,5 +171,8 @@ export interface ModulesPayload {
     appointment_finder?: AppointmentFinderData;
     map?:                MapRouteData;
     form_prefill?:       FormPrefillData;
+    alert?:              AlertData;
+    links?:              LinksData;
+    faq?:                FaqData;
   };
 }

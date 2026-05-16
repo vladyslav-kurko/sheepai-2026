@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import ModuleCard from './ModuleCard';
-
-const MOCK_ITEMS = [
-  { id: 1, name: 'Valid passport or old ID card', tip: 'Must not be expired' },
-  { id: 2, name: 'Proof of residence (utility bill)', tip: 'Issued within the last 3 months' },
-  { id: 3, name: 'Completed application form MUP-1', tip: 'Download from e-Građani portal' },
-  { id: 4, name: 'Payment receipt (45 HRK fee)', tip: 'Pay at any FINA counter or via internet banking' },
-];
+import type { DocumentChecklistData } from './types';
 
 function ChecklistIcon() {
   return (
@@ -25,10 +19,14 @@ function CheckMark() {
   );
 }
 
-export default function DocumentChecklist() {
-  const [checked, setChecked] = useState<Set<number>>(new Set());
+interface Props {
+  data: DocumentChecklistData;
+}
 
-  function toggle(id: number) {
+export default function DocumentChecklist({ data }: Props) {
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+
+  function toggle(id: string) {
     setChecked((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -37,9 +35,9 @@ export default function DocumentChecklist() {
   }
 
   return (
-    <ModuleCard badge="Always shown" badgeVariant="always" icon={<ChecklistIcon />} title="Document checklist">
+    <ModuleCard badge="Documents" badgeVariant="always" icon={<ChecklistIcon />} title="Document checklist">
       <div className="checklist">
-        {MOCK_ITEMS.map((item) => {
+        {data.items.map((item) => {
           const done = checked.has(item.id);
           return (
             <div
@@ -56,7 +54,7 @@ export default function DocumentChecklist() {
               </div>
               <div className="checklist-item__body">
                 <div className="checklist-item__name">{item.name}</div>
-                <div className="checklist-item__tip">{item.tip}</div>
+                {item.tip && <div className="checklist-item__tip">{item.tip}</div>}
               </div>
             </div>
           );

@@ -122,6 +122,28 @@
     },
     "/conversations/{id}": {
       "get": {
+        "responses": {
+          "200": {
+            "description": "Conversation with message history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationWithMessagesDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "id",
@@ -129,7 +151,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Conversation ID"
           }
         ],
         "tags": [
@@ -166,18 +189,8 @@
         ]
       }
     },
-    "/conversations/{id}/messages": {
+    "/conversations/messages/{id}": {
       "post": {
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -200,6 +213,17 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Conversation ID"
+          }
+        ],
         "tags": [
           "Conversations"
         ]
@@ -264,27 +288,132 @@
           "password"
         ]
       },
+      "ConversationWithMessagesDTO": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationEntity"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageEntity"
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation",
+          "messages"
+        ]
+      },
+      "ConversationEntity": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "userId",
+          "title",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MessageEntity": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "conversationId",
+          "sender",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "CreateConversationRequestDTO": {
         "properties": {
           "message": {
             "type": "string",
             "required": true
+          },
+          "chipAnswer": {
+            "$ref": "#/components/schemas/ChipAnswerDTO"
           }
         },
         "type": "object",
         "required": [
-          "message"
+          "message",
+          "chipAnswer"
+        ]
+      },
+      "ChipAnswerDTO": {
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "slotKey": {
+            "type": "string"
+          },
+          "slotValue": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "slotKey",
+          "slotValue"
         ]
       },
       "CreatedConversationDTO": {
         "properties": {
           "conversation": {
-            "type": "object",
-            "ref": "Conversation"
+            "$ref": "#/components/schemas/ConversationEntity"
           },
           "initialAnswer": {
-            "type": "object",
-            "ref": "Message"
+            "$ref": "#/components/schemas/AssistantMessageEntity"
           }
         },
         "type": "object",
@@ -293,23 +422,82 @@
           "initialAnswer"
         ]
       },
+      "AssistantMessageEntity": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "$ref": "#/components/schemas/ModulesPayloadSchema"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "conversationId",
+          "sender",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ModulesPayloadSchema": {
+        "properties": {
+          "modulesToRender": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "modulesToRender",
+          "data"
+        ]
+      },
       "SendMessageRequestDTO": {
         "properties": {
           "message": {
             "type": "string",
             "required": true
+          },
+          "chipAnswer": {
+            "$ref": "#/components/schemas/ChipAnswerDTO"
           }
         },
         "type": "object",
         "required": [
-          "message"
+          "message",
+          "chipAnswer"
         ]
       },
       "MessageResponseDTO": {
         "properties": {
           "message": {
-            "type": "object",
-            "ref": "Message"
+            "$ref": "#/components/schemas/AssistantMessageEntity"
           }
         },
         "type": "object",
