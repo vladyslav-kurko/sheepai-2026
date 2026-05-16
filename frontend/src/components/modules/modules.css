@@ -1,0 +1,493 @@
+/* ── Base card ── */
+.module-card {
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: 'Lato', system-ui, sans-serif;
+  color: #020617;
+}
+
+.module-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  width: fit-content;
+}
+
+.module-card__badge--always {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.module-card__badge--conditional {
+  background: #FEF9C3;
+  color: #854D0E;
+}
+
+.module-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.module-card__icon {
+  width: 20px;
+  height: 20px;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.module-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+/* ── Office Hours ── */
+.hours-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hours-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.hours-row--today {
+  background: #EFF6FF;
+  font-weight: 700;
+  color: #1D4ED8;
+}
+
+.hours-row__day { color: inherit; }
+.hours-row__time { color: inherit; font-variant-numeric: tabular-nums; }
+
+.hours-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.hours-badge--open   { background: #DCFCE7; color: #15803D; }
+.hours-badge--closed { background: #FEE2E2; color: #B91C1C; }
+
+.hours-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Document Checklist ── */
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.checklist-item:hover { background: #F8FAFC; }
+
+.checklist-item--done {
+  background: #F0FDF4;
+  border-color: #BBF7D0;
+}
+
+.checklist-item__check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #CBD5E1;
+  border-radius: 5px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.checklist-item--done .checklist-item__check {
+  background: #16A34A;
+  border-color: #16A34A;
+}
+
+.checklist-item__body { flex: 1; }
+.checklist-item__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+  line-height: 1.3;
+}
+
+.checklist-item--done .checklist-item__name {
+  text-decoration: line-through;
+  color: #94A3B8;
+}
+
+.checklist-item__tip {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+/* ── Process Timeline ── */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background: #E2E8F0;
+}
+
+.timeline-step {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.timeline-step:last-child { padding-bottom: 0; }
+
+.timeline-step__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.timeline-step__dot--user  { background: #DBEAFE; color: #1D4ED8; }
+.timeline-step__dot--city  { background: #F3E8FF; color: #7E22CE; }
+.timeline-step__dot--done  { background: #DCFCE7; color: #15803D; }
+
+.timeline-step__content { flex: 1; padding-top: 3px; }
+.timeline-step__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0 0 2px;
+}
+
+.timeline-step__meta {
+  font-size: 12px;
+  color: #64748B;
+  display: flex;
+  gap: 8px;
+}
+
+.timeline-step__actor {
+  font-weight: 600;
+  color: #475569;
+}
+
+/* ── Contact Card ── */
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  text-decoration: none;
+  color: #0F172A;
+  transition: background 150ms ease;
+  cursor: pointer;
+}
+
+.contact-row:hover { background: #F8FAFC; }
+
+.contact-row__icon {
+  width: 16px;
+  height: 16px;
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.contact-row__label { color: #64748B; font-size: 12px; min-width: 60px; }
+.contact-row__value { font-weight: 600; }
+
+.contact-book-btn {
+  width: 100%;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  background: #0369A1;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.contact-book-btn:hover { background: #0284C7; }
+
+/* ── Fee Calculator ── */
+.fee-calc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fee-calc__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+}
+
+.fee-calc__breakdown {
+  border-top: 1px dashed #E2E8F0;
+  border-bottom: 1px dashed #E2E8F0;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fee-calc__row--sub .fee-calc__label { font-size: 12.5px; }
+.fee-calc__row--sub .fee-calc__value { font-size: 12.5px; }
+
+.fee-calc__row--total {
+  padding-top: 6px;
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #0F172A;
+}
+
+.fee-calc__label { color: #64748B; }
+.fee-calc__value { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.fee-calc__input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13.5px;
+}
+
+.fee-calc__stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fee-calc__btn {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  transition: background 150ms ease;
+}
+
+.fee-calc__btn:hover { background: #F1F5F9; }
+.fee-calc__count { font-weight: 700; min-width: 20px; text-align: center; }
+
+/* ── Appointment Finder ── */
+.appt-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.appt-slot {
+  padding: 6px 12px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  color: #334155;
+  transition: all 150ms ease;
+}
+
+.appt-slot:hover { border-color: #0369A1; color: #0369A1; background: #EFF6FF; }
+.appt-slot--selected { border-color: #0369A1; background: #0369A1; color: #fff; }
+.appt-slot--taken { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+
+.appt-confirm-btn {
+  width: 100%;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  background: #0369A1;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.appt-confirm-btn:hover:not(:disabled) { background: #0284C7; }
+.appt-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.appt-date-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+/* ── Map + Route ── */
+.map-placeholder {
+  background: #F1F5F9;
+  border-radius: 9px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  font-size: 13px;
+  border: 1px solid #E2E8F0;
+}
+
+.map-address {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.map-routes {
+  display: flex;
+  gap: 6px;
+}
+
+.map-route-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #334155;
+  transition: all 150ms ease;
+}
+
+.map-route-btn:hover { border-color: #0369A1; color: #0369A1; }
+.map-route-btn--active { border-color: #0369A1; background: #EFF6FF; color: #0369A1; }
+.map-route-btn__time { font-size: 13px; font-weight: 700; }
+
+/* ── Form Prefill ── */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-field__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.form-field__value {
+  font-size: 13.5px;
+  padding: 7px 10px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 7px;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-family: 'Lato', system-ui, sans-serif;
+}
+
+.form-field__value--prefilled {
+  border-color: #BBF7D0;
+  background: #F0FDF4;
+  color: #15803D;
+}
+
+.form-open-btn {
+  width: 100%;
+  padding: 9px;
+  border: 1.5px solid #0369A1;
+  border-radius: 9px;
+  background: #fff;
+  color: #0369A1;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.form-open-btn:hover { background: #EFF6FF; }
