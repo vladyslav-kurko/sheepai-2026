@@ -21,23 +21,3 @@ export class SigninRequest {
     password!: string;
 }
 
-@OasSchema()
-export class RefreshRequest {
-    @OasSchemaProperty({ type: "string" })
-    refreshToken!: string;
-}
-
-@OasSchema()
-export class AuthTokensResponse {
-    @OasSchemaProperty({ type: "string" })
-    accessToken!: string;
-
-    @OasSchemaProperty({ type: "string" })
-    refreshToken!: string;
-}
-
-@OasSchema()
-export class AccessTokenResponse {
-    @OasSchemaProperty({ type: "string" })
-    accessToken!: string;
-}

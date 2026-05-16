@@ -1,9 +1,9 @@
 import { inject, injectable } from "inversify";
 import { AppTypes } from "../../container/AppTypes";
 import { MongoDBClient } from "../client";
-import { FromConversationEntityMapper, FromMessageEntityMapper, IConversation } from "./types";
+import { FromConversationEntityMapper, FromMessageEntityMapper, IConversation, IConversationMapper, IConversationMessage } from "./types";
 import { UUID } from "mongodb";
-import { ConversationEntity, ConversationEntityBuilder, MessageEntity } from "../../domain";
+import { ConversationEntity, ConversationEntityBuilder, MessageEntity, MessageEntityBuilder } from "../../domain";
 
 @injectable()
 export class ConversationRepository {
@@ -18,7 +18,6 @@ export class ConversationRepository {
 
     public async createConversation(conversation: ConversationEntity): Promise<ConversationEntity> {
         const payload: IConversation = FromConversationEntityMapper.fromDTO(conversation);
-        // Insert the payload into the database (pseudo-code)
         await this.client.getConnection().collection(this.CONVERSATIONS_COLLECTION).insertOne(payload);
         return new ConversationEntityBuilder()
             .setId(payload.id.toString())
@@ -29,16 +28,37 @@ export class ConversationRepository {
             .build();
     }
 
-    public async getConversationById(conversationId: UUID): Promise<IConversation | null> {
-        const conversation = await this.client.getConnection().collection(this.CONVERSATIONS_COLLECTION).findOne({ id: new UUID(conversationId) });
-        return conversation as IConversation | null;
+    public async getConversationById(conversationId: string): Promise<ConversationEntity | null> {
+        const doc = await this.client.getConnection()
+            .collection(this.CONVERSATIONS_COLLECTION)
+            .findOne({ id: new UUID(conversationId) });
+        if (!doc) return null;
+        return IConversationMapper.toDTO(doc as unknown as IConversation);
     }
 
-    public async addMessage(
-        message: MessageEntity,
-    ): Promise<MessageEntity> {
+    public async addMessage(message: MessageEntity): Promise<MessageEntity> {
         const payload = FromMessageEntityMapper.fromDTO(message);
         await this.client.getConnection().collection(this.MESSAGES_COLLECTION).insertOne(payload);
         return message;
+    }
+
+    public async getMessages(conversationId: string): Promise<MessageEntity[]> {
+        const docs = await this.client.getConnection()
+            .collection(this.MESSAGES_COLLECTION)
+            .find({ conversationId: new UUID(conversationId) })
+            .sort({ createdAt: 1 })
+            .toArray();
+
+        return docs.map((doc) => {
+            const msg = doc as unknown as IConversationMessage;
+            return new MessageEntityBuilder()
+                .setId(msg.id.toString())
+                .setConversationId(msg.conversationId.toString())
+                .setSender(msg.sender)
+                .setContent(msg.content)
+                .setCreatedAt(msg.createdAt)
+                .setUpdatedAt(msg.createdAt)
+                .build();
+        });
     }
 }
