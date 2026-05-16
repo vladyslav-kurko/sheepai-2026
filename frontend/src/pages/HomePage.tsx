@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import type { Message } from '../types';
 import HeroSection from '../components/HeroSection';
 import MessageList from '../components/MessageList';
@@ -8,10 +9,12 @@ import type { ModulesPayload, ModuleKey } from '../components/modules/types';
 import {
   postConversations,
   postConversationsMessagesId,
+  getConversationsId,
 } from '../api/generated/conversations/conversations';
 import type {
   // ChipAnswerDTO,
   CreatedConversationDTO,
+  ConversationWithMessagesDTO,
   MessageResponseDTO,
 } from '../api/generated/theGoOverAPI.schemas';
 import {
@@ -23,13 +26,15 @@ import './HomePage.css';
 // const EMPTY_CHIP: ChipAnswerDTO = { label: '', slotKey: '', slotValue: '' };
 
 export default function HomePage() {
-  const [chatStarted, setChatStarted] = useState(false);
-  const [heroVisible, setHeroVisible] = useState(true);
+  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>();
+
+  const [chatStarted, setChatStarted] = useState(!!urlConversationId);
+  const [heroVisible, setHeroVisible] = useState(!urlConversationId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [mainLanguage, setMainLanguage] = useState<ChatLanguage | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(urlConversationId ?? null);
   const [activeModules, setActiveModules] = useState<ModulesPayload | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,13 +43,50 @@ export default function HomePage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  useEffect(() => {
+    if (!urlConversationId) return;
+
+    async function loadHistory() {
+      setLoading(true);
+      try {
+        const res = await getConversationsId(urlConversationId!);
+        const { messages: raw } = res as unknown as ConversationWithMessagesDTO;
+
+        setMessages(raw.map((msg) => ({
+          id: msg.id,
+          role: msg.sender as 'user' | 'assistant',
+          content: msg.sender === 'user'
+            ? (msg.content as unknown as string)
+            : ((msg.content as { data?: { text?: { markdown?: string } } })?.data?.text?.markdown ?? ''),
+        })));
+
+        const lastAssistant = [...raw].reverse().find((m) => m.sender === 'assistant');
+        if (lastAssistant) {
+          const c = lastAssistant.content as { modulesToRender?: string[]; data?: Record<string, unknown> };
+          const sidebarKeys = (c.modulesToRender ?? []).filter((k) => k !== 'text') as ModuleKey[];
+          if (sidebarKeys.length > 0 && c.data) {
+            setActiveModules({ modulesToRender: sidebarKeys, data: c.data as ModulesPayload['data'] });
+          }
+        }
+      } catch {
+        // leave empty chat on error
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadHistory();
+  }, [urlConversationId]);
+
   async function callApi(text: string): Promise<{ replyText: string; modules: ModulesPayload }> {
     let content: { modulesToRender: string[]; data: Record<string, unknown> };
 
     if (!conversationId) {
       // @ts-expect-error - fix this type mismatch later
       const res = (await postConversations({ message: text, chipAnswer: null })) as unknown as CreatedConversationDTO;
-      setConversationId(res.conversation.id);
+      const newId = res.conversation.id;
+      setConversationId(newId);
+      window.history.replaceState(null, '', `/c/${newId}`);
       content = res.initialAnswer.content as typeof content;
     } else {
       const res = (await postConversationsMessagesId(conversationId, {

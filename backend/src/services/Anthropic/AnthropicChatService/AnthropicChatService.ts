@@ -8,6 +8,7 @@ import { ApiErrorBuilder, ErrorCode } from "../../../errors";
 import { CROATIAN_GOV_SITES } from "../../CroatianGovSites";
 import { ScraperService } from "../../ScraperService";
 import { ModulesPayload } from "../../../controllers/Conversation/MessageModule.interface";
+import { ScrapedLink } from "../../ScraperService";
 
 const SYSTEM_PROMPT = `You are a Croatian government services assistant. Your job is to help users navigate Croatian bureaucracy.
 
@@ -50,7 +51,9 @@ Rules:
 - Use "clarification" ONLY when the query is genuinely too vague to act on (missing the single key piece of information)
 - A clarification response must have ONLY "clarification" in modulesToRender — no other modules alongside it
 - Chips slotKey must be "__intent__" for intent disambiguation, "city" for city, or the specific slot name
-- If conversation context is already provided at the top of the message, act on it — do not ask again`;
+- If conversation context is already provided at the top of the message, act on it — do not ask again
+- Every URL you include in links, download_list, contact.bookingUrl, or quick_actions MUST come from either the "Source URL" or the "Relevant links" section of the search tool result — never invent or guess a URL
+- You may call search_gov_site again on any "Relevant link" URL to get more specific content from that subpage`;
 
 const SEARCH_TOOL: Anthropic.Tool = {
     name: "search_gov_site",
@@ -77,6 +80,32 @@ export class AnthropicChatService {
         @inject(AppTypes.ScraperService) private readonly scraper: ScraperService,
     ) {
         this.client = new Anthropic({ apiKey: this.config.anthropicApiKey });
+    }
+
+    private filterRelevantLinks(links: ScrapedLink[], query: string): ScrapedLink[] {
+        const STOP_WORDS = new Set([
+            "i", "u", "je", "za", "na", "se", "da", "s", "o", "a", "ili", "od",
+            "the", "and", "for", "with", "how", "can", "get", "what", "where",
+        ]);
+        const keywords = query
+            .toLowerCase()
+            .replace(/[^a-zčćšđžA-ZČĆŠĐŽ0-9\s]/g, " ")
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+
+        if (keywords.length === 0) return links.slice(0, 10);
+
+        const scored = links.map(link => {
+            const haystack = (link.label + " " + link.href).toLowerCase();
+            const score = keywords.filter(kw => haystack.includes(kw)).length;
+            return { link, score };
+        });
+
+        return scored
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10)
+            .map(({ link }) => link);
     }
 
     public async sendMessage(message: string): Promise<string> {
@@ -140,11 +169,18 @@ export class AnthropicChatService {
                         if (block.type !== "tool_use") continue;
                         const { url } = block.input as { url: string };
                         this.logger.info(`[ AnthropicChatService ] Tool call: search_gov_site(${url})`);
-                        const content = await this.scraper.scrapeUrl(url);
+                        const result = await this.scraper.scrapeUrl(url);
+                        const relevantLinks = this.filterRelevantLinks(result.links, userMessage);
+                        const linksSection = relevantLinks.length > 0
+                            ? relevantLinks.map(l => `- [${l.label}](${l.href})`).join("\n")
+                            : "(none)";
+                        const content = result.text
+                            ? `Source URL: ${result.sourceUrl}\n\n--- Page content ---\n${result.text}\n\n--- Relevant links found on this page ---\n${linksSection}`
+                            : "No content found at this URL.";
                         toolResults.push({
                             type: "tool_result",
                             tool_use_id: block.id,
-                            content: content || "No content found at this URL.",
+                            content,
                         });
                     }
 
