@@ -4,6 +4,7 @@ import HeroSection from '../components/HeroSection';
 import MessageList from '../components/MessageList';
 import ChatInput from '../components/ChatInput';
 import ModulesPanel from '../components/modules/ModulesPanel';
+import Sidebar from '../components/Sidebar';
 import type { ModulesPayload, ModuleKey } from '../components/modules/types';
 import {
   postConversations,
@@ -114,6 +115,7 @@ export default function HomePage() {
   if (!chatStarted) {
     return (
       <div className="page">
+        <Sidebar />
         <div className="card">
           <HeroSection visible={heroVisible} />
           <ChatInput
@@ -132,6 +134,7 @@ export default function HomePage() {
 
   return (
     <div className="page">
+      <Sidebar />
       <div className={`chat-layout${activeModules ? ' chat-layout--wide' : ''}`}>
         <div className="card card--chat">
           <MessageList
