@@ -76,7 +76,7 @@ export default function HomePage() {
 
   return (
     <div className="page">
-      <div className={`card${chatStarted ? ' card--chat' : ''}`}>
+<div className={`card${chatStarted ? ' card--chat' : ''}`}>
         {!chatStarted && <HeroSection />}
         {chatStarted && (
           <MessageList messages={messages} loading={loading} bottomRef={bottomRef} />
