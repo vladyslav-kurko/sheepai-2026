@@ -10,9 +10,11 @@ import {
 import './HomePage.css';
 
 // Replace with real API call when the backend is ready
-async function sendToBackend(_message: string, _language: ChatLanguage): Promise<string> {
+async function sendToBackend(_message: string, language: ChatLanguage): Promise<string> {
   await new Promise((r) => setTimeout(r, 1500));
-  return 'Backend nije još spojen.\nBackend not connected yet.';
+  return language === 'hr'
+    ? 'Backend jos nije spojen.'
+    : 'Backend is not connected yet.';
 }
 
 export default function HomePage() {
@@ -38,7 +40,7 @@ export default function HomePage() {
 
     console.info('[PromptEngineering] language', {
       input: text,
-      detectedLanguage: prepared.language,
+      detectedLanguage: prepared.detectedLanguage,
       detectedIso3: prepared.iso3,
       source: prepared.source,
       confidence: prepared.confidence,
@@ -79,7 +81,12 @@ export default function HomePage() {
 <div className={`card${chatStarted ? ' card--chat' : ''}`}>
         {!chatStarted && <HeroSection />}
         {chatStarted && (
-          <MessageList messages={messages} loading={loading} bottomRef={bottomRef} />
+          <MessageList
+            messages={messages}
+            loading={loading}
+            bottomRef={bottomRef}
+            language={mainLanguage}
+          />
         )}
         <ChatInput
           value={input}
@@ -88,6 +95,7 @@ export default function HomePage() {
           loading={loading}
           showHint={!chatStarted}
           inputRef={inputRef}
+          language={mainLanguage}
         />
       </div>
     </div>
