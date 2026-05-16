@@ -17,7 +17,8 @@ export class Config {
     readonly jwtRefreshSecret: string;
     readonly jwtAccessExpiry: string;
     readonly jwtRefreshExpiry: string;
-    readonly corsOrigin: string;
+    readonly corsOrigins: string[];
+    readonly cookieSecure: boolean;
 
     constructor() {
         this.host = this.getEnvVariable<string>("HOST", this.host);
@@ -31,7 +32,9 @@ export class Config {
         this.jwtRefreshSecret = this.getEnvVariable<string>("JWT_REFRESH_SECRET", "", true);
         this.jwtAccessExpiry = this.getEnvVariable<string>("JWT_ACCESS_EXPIRY", "15m");
         this.jwtRefreshExpiry = this.getEnvVariable<string>("JWT_REFRESH_EXPIRY", "7d");
-        this.corsOrigin = this.getEnvVariable<string>("CORS_ORIGIN", "http://localhost:5173");
+        const rawCorsOrigin = this.getEnvVariable<string>("CORS_ORIGIN", "http://localhost:5173");
+        this.corsOrigins = rawCorsOrigin.split(",").map(o => o.trim()).filter(Boolean);
+        this.cookieSecure = this.getEnvVariable<boolean>("COOKIE_SECURE", "false", false, (v) => v === "true");
     }
 
     private getEnvVariable<T>(
