@@ -3,10 +3,14 @@ import type { Message } from '../types';
 import HeroSection from '../components/HeroSection';
 import MessageList from '../components/MessageList';
 import ChatInput from '../components/ChatInput';
+import {
+  prepareLanguageQuery,
+  type ChatLanguage,
+} from '../prompt-engineering';
 import './HomePage.css';
 
 // Replace with real API call when the backend is ready
-async function sendToBackend(_message: string): Promise<string> {
+async function sendToBackend(_message: string, _language: ChatLanguage): Promise<string> {
   await new Promise((r) => setTimeout(r, 1500));
   return 'Backend nije još spojen.\nBackend not connected yet.';
 }
@@ -16,6 +20,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mainLanguage, setMainLanguage] = useState<ChatLanguage | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,6 +32,29 @@ export default function HomePage() {
     const text = input.trim();
     if (!text || loading) return;
 
+    const prepared = await prepareLanguageQuery(text, mainLanguage);
+    const activeLanguage = prepared.language;
+    const normalisedText = prepared.normalizedText;
+
+    console.info('[PromptEngineering] language', {
+      input: text,
+      detectedLanguage: prepared.language,
+      detectedIso3: prepared.iso3,
+      source: prepared.source,
+      confidence: prepared.confidence,
+      isMixed: prepared.isMixed,
+      activeLanguage,
+    });
+    console.info('[PromptEngineering] normalisation', {
+      input: text,
+      normalised: normalisedText,
+      changed: prepared.changed,
+    });
+
+    if (!mainLanguage && prepared.confidence >= 0.65) {
+      setMainLanguage(prepared.language);
+    }
+
     if (!chatStarted) setChatStarted(true);
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text };
@@ -35,7 +63,7 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const reply = await sendToBackend(text);
+      const reply = await sendToBackend(normalisedText, activeLanguage);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'assistant', content: reply },
