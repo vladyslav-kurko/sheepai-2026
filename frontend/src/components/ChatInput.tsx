@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
 import { SendIcon } from './icons';
-import type { ChatLanguage } from '../prompt-engineering';
 
 const MAX_HEIGHT = 160;
 
@@ -20,35 +19,9 @@ interface Props {
   loading: boolean;
   showHint: boolean;
   inputRef: RefObject<HTMLTextAreaElement | null>;
-  language: ChatLanguage | null;
 }
 
 export default function ChatInput({ value, onChange, onSubmit, onChipClick, loading, showHint, inputRef }: Props) {
-const COPY = {
-  hr: {
-    placeholder: 'Kako dobiti osobnu iskaznicu?',
-    inputLabel: 'Vase pitanje',
-    sendLabel: 'Posalji',
-    hint: 'Enter za slanje · Shift+Enter za novi red',
-  },
-  en: {
-    placeholder: 'How do I get an ID card?',
-    inputLabel: 'Your question',
-    sendLabel: 'Send',
-    hint: 'Enter to send · Shift+Enter for new line',
-  },
-  default: {
-    placeholder: 'Kako dobiti osobnu iskaznicu? / How do I get an ID card?',
-    inputLabel: 'Your question / Vase pitanje',
-    sendLabel: 'Send / Posalji',
-    hint: 'Enter to send · Shift+Enter for new line',
-  },
-} as const;
-
-export default function ChatInput({ value, onChange, onSubmit, loading, showHint, inputRef, language }: Props) {
-  const copy = language ? COPY[language] : COPY.default;
-
-  // Auto-resize: shrink to 'auto' first so scrollHeight recalculates correctly
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -79,16 +52,15 @@ export default function ChatInput({ value, onChange, onSubmit, loading, showHint
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Pitajte bilo što o dokumentima…"
-          placeholder={copy.placeholder}
           rows={1}
-          aria-label={copy.inputLabel}
+          aria-label="Your question"
           disabled={loading}
         />
         <button
           type="submit"
           className="card__send"
           disabled={!value.trim() || loading}
-          aria-label={copy.sendLabel}
+          aria-label="Send"
         >
           <SendIcon />
         </button>
@@ -109,7 +81,6 @@ export default function ChatInput({ value, onChange, onSubmit, loading, showHint
           ))}
         </div>
       )}
-      {showHint && <p className="card__hint">{copy.hint}</p>}
     </div>
   );
 }
