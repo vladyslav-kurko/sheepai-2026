@@ -23,26 +23,84 @@ export interface SigninRequest {
   password: string;
 }
 
-export interface CreateConversationRequestDTO {
-  message: string;
+export interface ConversationEntity {
+  id: string;
+  userId: string | null;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type CreatedConversationDTOConversation = { [key: string]: unknown };
+export type MessageEntitySender = typeof MessageEntitySender[keyof typeof MessageEntitySender];
 
-export type CreatedConversationDTOInitialAnswer = { [key: string]: unknown };
+
+export const MessageEntitySender = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export type MessageEntityContent = { [key: string]: unknown };
+
+export interface MessageEntity {
+  id: string;
+  conversationId: string;
+  sender: MessageEntitySender;
+  content: MessageEntityContent;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationWithMessagesDTO {
+  conversation: ConversationEntity;
+  messages: MessageEntity[];
+}
+
+export interface ChipAnswerDTO {
+  label: string;
+  slotKey: string;
+  slotValue: string;
+}
+
+export interface CreateConversationRequestDTO {
+  message: string;
+  chipAnswer: ChipAnswerDTO;
+}
+
+export type AssistantMessageEntitySender = typeof AssistantMessageEntitySender[keyof typeof AssistantMessageEntitySender];
+
+
+export const AssistantMessageEntitySender = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export type ModulesPayloadSchemaData = { [key: string]: unknown };
+
+export interface ModulesPayloadSchema {
+  modulesToRender: string[];
+  data: ModulesPayloadSchemaData;
+}
+
+export interface AssistantMessageEntity {
+  id: string;
+  conversationId: string;
+  sender: AssistantMessageEntitySender;
+  content: ModulesPayloadSchema;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CreatedConversationDTO {
-  conversation: CreatedConversationDTOConversation;
-  initialAnswer: CreatedConversationDTOInitialAnswer;
+  conversation: ConversationEntity;
+  initialAnswer: AssistantMessageEntity;
 }
 
 export interface SendMessageRequestDTO {
   message: string;
+  chipAnswer: ChipAnswerDTO;
 }
 
-export type MessageResponseDTOMessage = { [key: string]: unknown };
-
 export interface MessageResponseDTO {
-  message: MessageResponseDTOMessage;
+  message: AssistantMessageEntity;
 }
 

@@ -5,6 +5,8 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  ApiError,
+  ConversationWithMessagesDTO,
   CreateConversationRequestDTO,
   CreatedConversationDTO,
   MessageResponseDTO,
@@ -13,17 +15,24 @@ import type {
 
 import { customFetch } from '../../mutator';
 
-export type getConversationsIdResponseDefault = {
-  data: unknown
-  status: number
+export type getConversationsIdResponse200 = {
+  data: ConversationWithMessagesDTO
+  status: 200
 }
 
-;
-export type getConversationsIdResponseError = (getConversationsIdResponseDefault) & {
+export type getConversationsIdResponse404 = {
+  data: ApiError
+  status: 404
+}
+
+export type getConversationsIdResponseSuccess = (getConversationsIdResponse200) & {
+  headers: Headers;
+};
+export type getConversationsIdResponseError = (getConversationsIdResponse404) & {
   headers: Headers;
 };
 
-export type getConversationsIdResponse = (getConversationsIdResponseError)
+export type getConversationsIdResponse = (getConversationsIdResponseSuccess | getConversationsIdResponseError)
 
 export const getGetConversationsIdUrl = (id: string,) => {
 
@@ -77,30 +86,30 @@ export const postConversations = async (createConversationRequestDTO: CreateConv
 );}
 
 
-export type postConversationsIdMessagesResponse200 = {
+export type postConversationsMessagesIdResponse200 = {
   data: MessageResponseDTO
   status: 200
 }
 
-export type postConversationsIdMessagesResponseSuccess = (postConversationsIdMessagesResponse200) & {
+export type postConversationsMessagesIdResponseSuccess = (postConversationsMessagesIdResponse200) & {
   headers: Headers;
 };
 ;
 
-export type postConversationsIdMessagesResponse = (postConversationsIdMessagesResponseSuccess)
+export type postConversationsMessagesIdResponse = (postConversationsMessagesIdResponseSuccess)
 
-export const getPostConversationsIdMessagesUrl = (id: string,) => {
-
-
+export const getPostConversationsMessagesIdUrl = (id: string,) => {
 
 
-  return `/conversations/${id}/messages`
+
+
+  return `/conversations/messages/${id}`
 }
 
-export const postConversationsIdMessages = async (id: string,
-    sendMessageRequestDTO: SendMessageRequestDTO, options?: RequestInit): Promise<postConversationsIdMessagesResponse> => {
+export const postConversationsMessagesId = async (id: string,
+    sendMessageRequestDTO: SendMessageRequestDTO, options?: RequestInit): Promise<postConversationsMessagesIdResponse> => {
 
-  return customFetch<postConversationsIdMessagesResponse>(getPostConversationsIdMessagesUrl(id),
+  return customFetch<postConversationsMessagesIdResponse>(getPostConversationsMessagesIdUrl(id),
   {
     ...options,
     method: 'POST',
