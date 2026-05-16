@@ -32,8 +32,8 @@ container.bind<ChatController>(ChatController).toSelf().inSingletonScope();
 container.bind<AuthController>(AuthController).toSelf().inSingletonScope();
 container.bind<ConversationController>(ConversationController).toSelf().inSingletonScope();
 
-container.bind<AnthropicChatService>(AnthropicChatService).toSelf().inSingletonScope();
 container.bind<ScraperService>(AppTypes.ScraperService).to(ScraperService).inSingletonScope();
+container.bind<AnthropicChatService>(AnthropicChatService).toSelf().inSingletonScope();
 container.bind<ConversationPipelineService>(AppTypes.ConversationPipelineService).to(ConversationPipelineService).inSingletonScope();
 container.bind<ApiErrorHandler>(ApiErrorHandler).toSelf();
 container.bind<AuthMiddleware>(AuthMiddleware).toSelf();

@@ -4,6 +4,7 @@ import { MongoDBClient } from "../client";
 import { FromConversationEntityMapper, FromMessageEntityMapper, IConversation, IConversationMapper, IConversationMessage } from "./types";
 import { UUID } from "mongodb";
 import { ConversationEntity, ConversationEntityBuilder, MessageEntity, MessageEntityBuilder } from "../../domain";
+import { ApiErrorBuilder, ErrorCode } from "../../errors";
 
 @injectable()
 export class ConversationRepository {
@@ -14,7 +15,7 @@ export class ConversationRepository {
     constructor(
         @inject(AppTypes.MongoDBClient)
         private readonly client: MongoDBClient,
-    ) {}
+    ) { }
 
     public async createConversation(conversation: ConversationEntity): Promise<ConversationEntity> {
         const payload: IConversation = FromConversationEntityMapper.fromDTO(conversation);
@@ -28,18 +29,23 @@ export class ConversationRepository {
             .build();
     }
 
-    public async getConversationById(conversationId: string): Promise<ConversationEntity | null> {
+    public async getConversationById(conversationId: UUID | string): Promise<ConversationEntity | null> {
+        const id = typeof conversationId === "string" ? new UUID(conversationId) : conversationId;
         const doc = await this.client.getConnection()
             .collection(this.CONVERSATIONS_COLLECTION)
-            .findOne({ id: new UUID(conversationId) });
+            .findOne({ id });
         if (!doc) return null;
         return IConversationMapper.toDTO(doc as unknown as IConversation);
     }
 
     public async addMessage(message: MessageEntity): Promise<MessageEntity> {
-        const payload = FromMessageEntityMapper.fromDTO(message);
-        await this.client.getConnection().collection(this.MESSAGES_COLLECTION).insertOne(payload);
-        return message;
+        try {
+            const payload = FromMessageEntityMapper.fromDTO(message);
+            await this.client.getConnection().collection(this.MESSAGES_COLLECTION).insertOne(payload);
+            return message;
+        } catch (error) {
+            throw new ApiErrorBuilder().error(ErrorCode.DatabaseError, "Failed to add message to conversation").withDetails({ originalError: error instanceof Error ? error.message : error }).toJSON();
+        }
     }
 
     public async getMessages(conversationId: string): Promise<MessageEntity[]> {
