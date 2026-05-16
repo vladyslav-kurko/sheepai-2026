@@ -316,8 +316,8 @@
 
 /* ── Thinking typewriter ── */
 .thinking-bubble {
-  min-width: 80px;
-  min-height: 1.4em;
+  min-width: 120px;
+  height: calc(14px * 1.6); /* locked to one line — no layout shift between phrases */
   display: flex;
   align-items: center;
   gap: 0;

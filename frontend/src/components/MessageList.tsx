@@ -44,12 +44,16 @@ function ThinkingText({ language }: { language: ChatLanguage | null }) {
     }
 
     if (phase === 'deleting') {
-      if (displayed.length > 0) {
+      if (displayed.length > 1) {
         const t = setTimeout(() => setDisplayed((d) => d.slice(0, -1)), 32);
         return () => clearTimeout(t);
       }
-      indexRef.current = (indexRef.current + 1) % phrases.length;
-      setIndex(indexRef.current);
+      // Jump straight from last character to first char of next phrase —
+      // bubble never hits empty content so layout stays stable
+      const next = (indexRef.current + 1) % phrases.length;
+      indexRef.current = next;
+      setIndex(next);
+      setDisplayed(phrases[next][0]);
       setPhase('typing');
     }
   }, [displayed, phase, index, phrases]);
