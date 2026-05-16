@@ -33,8 +33,8 @@ function LinksModule({ data }: { data: LinksData }) {
       title="Useful links"
     >
       <div className="links-list">
-        {data.items.map((item) => (
-          <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="link-item">
+        {data.items.map((item, i) => (
+          <a key={i} href={item.url} target="_blank" rel="noreferrer" className="link-item">
             <span className="link-item__label">{item.label}</span>
             {item.description && <span className="link-item__desc">{item.description}</span>}
           </a>
